@@ -49,17 +49,6 @@ namespace nasedkin_e_strassen_algorithm {
     bool StrassenAlgorithmMPI::post_processing() { return true; }
 
     void StrassenAlgorithmMPI::strassen_multiply(const std::vector<std::vector<double>>& local_A, const std::vector<std::vector<double>>& local_B, std::vector<std::vector<double>>& local_result, int size) {
-        if (size <= 64) {
-            for (int i = 0; i < size; ++i) {
-                for (int j = 0; j < size; ++j) {
-                    local_result[i][j] = 0;
-                    for (int k = 0; k < size; ++k) {
-                        local_result[i][j] += local_A[i][k] * local_B[k][j];
-                    }
-                }
-            }
-            return;
-        }
 
         int new_size = size / 2;
         std::vector<std::vector<double>> A11(new_size, std::vector<double>(new_size));
