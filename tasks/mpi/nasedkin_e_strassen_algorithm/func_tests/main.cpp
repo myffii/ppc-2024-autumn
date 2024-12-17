@@ -92,3 +92,21 @@ TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_128x128) {
     ASSERT_TRUE(strassen_task.run()) << "Run failed for random matrix";
     ASSERT_TRUE(strassen_task.post_processing()) << "Post-processing failed for random matrix";
 }
+
+TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_256x256) {
+    auto taskData = std::make_shared<ppc::core::TaskData>();
+    taskData->inputs_count.push_back(256);
+
+    nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI strassen_task(taskData);
+
+    std::vector<std::vector<double>> matrixA;
+    std::vector<std::vector<double>> matrixB;
+    nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI::generate_random_matrix(256, matrixA);
+    nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI::generate_random_matrix(256, matrixB);
+    strassen_task.set_matrices(matrixA, matrixB);
+
+    ASSERT_TRUE(strassen_task.validation()) << "Validation failed for random matrix";
+    ASSERT_TRUE(strassen_task.pre_processing()) << "Pre-processing failed for random matrix";
+    ASSERT_TRUE(strassen_task.run()) << "Run failed for random matrix";
+    ASSERT_TRUE(strassen_task.post_processing()) << "Post-processing failed for random matrix";
+}
