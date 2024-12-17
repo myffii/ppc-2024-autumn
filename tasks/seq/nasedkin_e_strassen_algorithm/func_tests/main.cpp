@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
-#include "mpi/nasedkin_e_strassen_algorithm/include/ops_mpi.hpp"
-#include "mpi/nasedkin_e_strassen_algorithm/src/ops_mpi.cpp"
+#include "seq/nasedkin_e_strassen_algorithm/include/ops_seq.hpp"
+#include "seq/nasedkin_e_strassen_algorithm/src/ops_seq.cpp"
 
 TEST(StrassenAlgorithmSeq, test_random_matrix_2x2) {
   auto taskData = std::make_shared<ppc::core::TaskData>();

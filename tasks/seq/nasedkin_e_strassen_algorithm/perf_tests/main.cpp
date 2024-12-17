@@ -21,7 +21,7 @@ TEST(nasedkin_e_strassen_algorithm_seq, test_pipeline_run) {
 
   auto perfAttr = std::make_shared<ppc::core::PerfAttr>();
   perfAttr->num_running = 10;
-  
+
   auto current_timer = []() {
     static auto start_time = std::chrono::steady_clock::now();
     return std::chrono::duration<double>(std::chrono::steady_clock::now() - start_time).count();
