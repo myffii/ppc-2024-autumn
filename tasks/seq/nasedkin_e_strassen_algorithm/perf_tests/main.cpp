@@ -1,22 +1,17 @@
 #include <gtest/gtest.h>
-#include <boost/mpi/timer.hpp>
+#include <chrono>
+#include <memory>
+#include <vector>
+
 #include "core/perf/include/perf.hpp"
 #include "seq/nasedkin_e_strassen_algorithm/include/ops_seq.hpp"
 #include "seq/nasedkin_e_strassen_algorithm/src/ops_seq.cpp"
 
 TEST(nasedkin_e_strassen_algorithm_seq, test_pipeline_run) {
-  int matrixSize = 64;
-
   auto taskData = std::make_shared<ppc::core::TaskData>();
-  taskData->inputs_count.push_back(matrixSize);
+  taskData->inputs_count.push_back(8);
 
-  auto strassenTask = std::make_shared<nasedkin_e_strassen_algorithm::StrassenAlgorithmSeq>(taskData);
-
-  std::vector<std::vector<double>> matrixA;
-  std::vector<std::vector<double>> matrixB;
-  nasedkin_e_strassen_algorithm::StrassenAlgorithmSeq::generate_random_matrix(matrixSize, matrixA);
-  nasedkin_e_strassen_algorithm::StrassenAlgorithmSeq::generate_random_matrix(matrixSize, matrixB);
-  strassenTask->set_matrices(matrixA, matrixB);
+  auto strassenTask = std::make_shared<nasedkin_e_strassen_algorithm::StrassenAlgorithmSEQ>(taskData);
 
   ASSERT_TRUE(strassenTask->validation()) << "Validation failed for valid input";
 
@@ -26,8 +21,13 @@ TEST(nasedkin_e_strassen_algorithm_seq, test_pipeline_run) {
 
   auto perfAttr = std::make_shared<ppc::core::PerfAttr>();
   perfAttr->num_running = 10;
-  const boost::mpi::timer current_timer;
-  perfAttr->current_timer = [&] { return current_timer.elapsed(); };
+  
+  auto current_timer = []() {
+    static auto start_time = std::chrono::steady_clock::now();
+    return std::chrono::duration<double>(std::chrono::steady_clock::now() - start_time).count();
+  };
+
+  perfAttr->current_timer = current_timer;
 
   auto perfResults = std::make_shared<ppc::core::PerfResults>();
 
@@ -38,18 +38,10 @@ TEST(nasedkin_e_strassen_algorithm_seq, test_pipeline_run) {
 }
 
 TEST(nasedkin_e_strassen_algorithm_seq, test_task_run) {
-  int matrixSize = 64;
-  
   auto taskData = std::make_shared<ppc::core::TaskData>();
-  taskData->inputs_count.push_back(matrixSize);
+  taskData->inputs_count.push_back(8);
 
-  auto strassenTask = std::make_shared<nasedkin_e_strassen_algorithm::StrassenAlgorithmSeq>(taskData);
-
-  std::vector<std::vector<double>> matrixA;
-  std::vector<std::vector<double>> matrixB;
-  nasedkin_e_strassen_algorithm::StrassenAlgorithmSeq::generate_random_matrix(matrixSize, matrixA);
-  nasedkin_e_strassen_algorithm::StrassenAlgorithmSeq::generate_random_matrix(matrixSize, matrixB);
-  strassenTask->set_matrices(matrixA, matrixB);
+  auto strassenTask = std::make_shared<nasedkin_e_strassen_algorithm::StrassenAlgorithmSEQ>(taskData);
 
   ASSERT_TRUE(strassenTask->validation()) << "Validation failed for valid input";
 
@@ -59,8 +51,13 @@ TEST(nasedkin_e_strassen_algorithm_seq, test_task_run) {
 
   auto perfAttr = std::make_shared<ppc::core::PerfAttr>();
   perfAttr->num_running = 10;
-  const boost::mpi::timer current_timer;
-  perfAttr->current_timer = [&] { return current_timer.elapsed(); };
+
+  auto current_timer = []() {
+    static auto start_time = std::chrono::steady_clock::now();
+    return std::chrono::duration<double>(std::chrono::steady_clock::now() - start_time).count();
+  };
+
+  perfAttr->current_timer = current_timer;
 
   auto perfResults = std::make_shared<ppc::core::PerfResults>();
 
