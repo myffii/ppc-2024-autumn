@@ -10,9 +10,9 @@ TEST(StrassenAlgorithmSeq, test_random_matrix_2x2) {
   nasedkin_e_strassen_algorithm::StrassenAlgorithmSeq task(taskData);
 
   std::vector<std::vector<double>> A, B;
-  task.generate_random_matrix(2, A);
-  task.generate_random_matrix(2, B);
-  task.set_matrices(A, B);
+  nasedkin_e_strassen_algorithm::StrassenAlgorithmSeq::generate_random_matrix(2, A);
+  nasedkin_e_strassen_algorithm::StrassenAlgorithmSeq::generate_random_matrix(2, B);
+  nasedkin_e_strassen_algorithm::StrassenAlgorithmSeq::set_matrices(A, B);
 
   ASSERT_TRUE(task.validation());
   ASSERT_TRUE(task.pre_processing());
@@ -27,9 +27,9 @@ TEST(StrassenAlgorithmSeq, test_random_matrix_4x4) {
   nasedkin_e_strassen_algorithm::StrassenAlgorithmSeq task(taskData);
 
   std::vector<std::vector<double>> A, B;
-  task.generate_random_matrix(4, A);
-  task.generate_random_matrix(4, B);
-  task.set_matrices(A, B);
+  nasedkin_e_strassen_algorithm::StrassenAlgorithmSeq::generate_random_matrix(4, A);
+  nasedkin_e_strassen_algorithm::StrassenAlgorithmSeq::generate_random_matrix(4, B);
+  nasedkin_e_strassen_algorithm::StrassenAlgorithmSeq::set_matrices(A, B);
 
   ASSERT_TRUE(task.validation());
   ASSERT_TRUE(task.pre_processing());
@@ -44,9 +44,9 @@ TEST(StrassenAlgorithmSeq, test_random_matrix_8x8) {
   nasedkin_e_strassen_algorithm::StrassenAlgorithmSeq task(taskData);
 
   std::vector<std::vector<double>> A, B;
-  task.generate_random_matrix(8, A);
-  task.generate_random_matrix(8, B);
-  task.set_matrices(A, B);
+  nasedkin_e_strassen_algorithm::StrassenAlgorithmSeq::generate_random_matrix(8, A);
+  nasedkin_e_strassen_algorithm::StrassenAlgorithmSeq::generate_random_matrix(8, B);
+  nasedkin_e_strassen_algorithm::StrassenAlgorithmSeq::set_matrices(A, B);
 
   ASSERT_TRUE(task.validation());
   ASSERT_TRUE(task.pre_processing());
@@ -61,9 +61,9 @@ TEST(StrassenAlgorithmSeq, test_random_matrix_64x64) {
   nasedkin_e_strassen_algorithm::StrassenAlgorithmSeq task(taskData);
 
   std::vector<std::vector<double>> A, B;
-  task.generate_random_matrix(64, A);
-  task.generate_random_matrix(64, B);
-  task.set_matrices(A, B);
+  nasedkin_e_strassen_algorithm::StrassenAlgorithmSeq::generate_random_matrix(64, A);
+  nasedkin_e_strassen_algorithm::StrassenAlgorithmSeq::generate_random_matrix(64, B);
+  nasedkin_e_strassen_algorithm::StrassenAlgorithmSeq::set_matrices(A, B);
 
   ASSERT_TRUE(task.validation());
   ASSERT_TRUE(task.pre_processing());
@@ -78,9 +78,9 @@ TEST(StrassenAlgorithmSeq, test_random_matrix_128x128) {
   nasedkin_e_strassen_algorithm::StrassenAlgorithmSeq task(taskData);
 
   std::vector<std::vector<double>> A, B;
-  task.generate_random_matrix(128, A);
-  task.generate_random_matrix(128, B);
-  task.set_matrices(A, B);
+  nasedkin_e_strassen_algorithm::StrassenAlgorithmSeq::generate_random_matrix(128, A);
+  nasedkin_e_strassen_algorithm::StrassenAlgorithmSeq::generate_random_matrix(128, B);
+  nasedkin_e_strassen_algorithm::StrassenAlgorithmSeq::set_matrices(A, B);
 
   ASSERT_TRUE(task.validation());
   ASSERT_TRUE(task.pre_processing());
@@ -95,9 +95,9 @@ TEST(StrassenAlgorithmSeq, test_random_matrix_256x256) {
   nasedkin_e_strassen_algorithm::StrassenAlgorithmSeq task(taskData);
 
   std::vector<std::vector<double>> A, B;
-  task.generate_random_matrix(256, A);
-  task.generate_random_matrix(256, B);
-  task.set_matrices(A, B);
+  nasedkin_e_strassen_algorithm::StrassenAlgorithmSeq::generate_random_matrix(256, A);
+  nasedkin_e_strassen_algorithm::StrassenAlgorithmSeq::generate_random_matrix(256, B);
+  nasedkin_e_strassen_algorithm::StrassenAlgorithmSeq::set_matrices(A, B);
 
   ASSERT_TRUE(task.validation());
   ASSERT_TRUE(task.pre_processing());
