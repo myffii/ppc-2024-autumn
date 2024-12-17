@@ -1,354 +1,112 @@
 #include <gtest/gtest.h>
 
-#include <boost/mpi/communicator.hpp>
-#include <boost/mpi/environment.hpp>
-#include <iomanip>
-#include <random>
-#include <vector>
+#include "mpi/nasedkin_e_strassen_algorithm/include/ops_mpi.hpp"
+#include "mpi/nasedkin_e_strassen_algorithm/src/ops_mpi.cpp"
 
-#include "mpi/nasedkin_e_matrix_column_max_value/include/ops_mpi.hpp"
+TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_2x2) {
+    auto taskData = std::make_shared<ppc::core::TaskData>();
+    taskData->inputs_count.push_back(2);
 
-std::vector<int> generateRandomVector(int size) {
-  std::random_device rd;
-  std::mt19937 gen(rd());
-  std::vector<int> vec(size);
-  for (int i = 0; i < size; i++) {
-    int value = gen() % 200 - 100;
-    if (value >= 0) {
-      vec[i] = value;
-    }
-  }
-  return vec;
+    nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI strassen_task(taskData);
+
+    std::vector<std::vector<double>> matrixA;
+    std::vector<std::vector<double>> matrixB;
+    nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI::generate_random_matrix(2, matrixA);
+    nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI::generate_random_matrix(2, matrixB);
+    strassen_task.set_matrices(matrixA, matrixB);
+
+    ASSERT_TRUE(strassen_task.validation()) << "Validation failed for random matrix";
+    ASSERT_TRUE(strassen_task.pre_processing()) << "Pre-processing failed for random matrix";
+    ASSERT_TRUE(strassen_task.run()) << "Run failed for random matrix";
+    ASSERT_TRUE(strassen_task.post_processing()) << "Post-processing failed for random matrix";
 }
 
-TEST(nasedkin_e_matrix_column_max_value_mpi, Test_Zero_Columns) {
-  boost::mpi::communicator world;
+TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_4x4) {
+    auto taskData = std::make_shared<ppc::core::TaskData>();
+    taskData->inputs_count.push_back(4);
 
-  int numCols = 0;
-  int numRows = 0;
+    nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI strassen_task(taskData);
 
-  std::vector<int> matrix;
-  std::vector<int> resultParallel(numCols, 0);
+    std::vector<std::vector<double>> matrixA;
+    std::vector<std::vector<double>> matrixB;
+    nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI::generate_random_matrix(4, matrixA);
+    nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI::generate_random_matrix(4, matrixB);
+    strassen_task.set_matrices(matrixA, matrixB);
 
-  std::shared_ptr<ppc::core::TaskData> taskDataParallel = std::make_shared<ppc::core::TaskData>();
-
-  if (world.rank() == 0) {
-    const int totalSize = numCols * numRows;
-    matrix = generateRandomVector(totalSize);
-
-    taskDataParallel->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrix.data()));
-    taskDataParallel->inputs_count.emplace_back(matrix.size());
-    taskDataParallel->inputs_count.emplace_back(numCols);
-    taskDataParallel->inputs_count.emplace_back(numRows);
-    taskDataParallel->outputs.emplace_back(reinterpret_cast<uint8_t*>(resultParallel.data()));
-    taskDataParallel->outputs_count.emplace_back(resultParallel.size());
-  }
-
-  nasedkin_e_matrix_column_max_value_mpi::TestMPITaskParallel testMpiTaskParallel(taskDataParallel);
-
-  if (world.rank() == 0) {
-    ASSERT_FALSE(testMpiTaskParallel.validation());
-  }
+    ASSERT_TRUE(strassen_task.validation()) << "Validation failed for random matrix";
+    ASSERT_TRUE(strassen_task.pre_processing()) << "Pre-processing failed for random matrix";
+    ASSERT_TRUE(strassen_task.run()) << "Run failed for random matrix";
+    ASSERT_TRUE(strassen_task.post_processing()) << "Post-processing failed for random matrix";
 }
 
-TEST(nasedkin_e_matrix_column_max_value_mpi, Test_Empty_Matrix) {
-  boost::mpi::communicator world;
+TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_8x8) {
+    auto taskData = std::make_shared<ppc::core::TaskData>();
+    taskData->inputs_count.push_back(8);
 
-  int numCols = 5;
-  int numRows = 5;
+    nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI strassen_task(taskData);
 
-  std::vector<int> matrix;
-  std::vector<int> resultParallel(numCols, 0);
+    std::vector<std::vector<double>> matrixA;
+    std::vector<std::vector<double>> matrixB;
+    nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI::generate_random_matrix(8, matrixA);
+    nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI::generate_random_matrix(8, matrixB);
+    strassen_task.set_matrices(matrixA, matrixB);
 
-  std::shared_ptr<ppc::core::TaskData> taskDataParallel = std::make_shared<ppc::core::TaskData>();
-
-  if (world.rank() == 0) {
-    taskDataParallel->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrix.data()));
-    taskDataParallel->inputs_count.emplace_back(matrix.size());
-    taskDataParallel->inputs_count.emplace_back(numCols);
-    taskDataParallel->inputs_count.emplace_back(numRows);
-    taskDataParallel->outputs.emplace_back(reinterpret_cast<uint8_t*>(resultParallel.data()));
-    taskDataParallel->outputs_count.emplace_back(resultParallel.size());
-  }
-
-  nasedkin_e_matrix_column_max_value_mpi::TestMPITaskParallel testMpiTaskParallel(taskDataParallel);
-
-  if (world.rank() == 0) {
-    ASSERT_FALSE(testMpiTaskParallel.validation());
-  }
+    ASSERT_TRUE(strassen_task.validation()) << "Validation failed for random matrix";
+    ASSERT_TRUE(strassen_task.pre_processing()) << "Pre-processing failed for random matrix";
+    ASSERT_TRUE(strassen_task.run()) << "Run failed for random matrix";
+    ASSERT_TRUE(strassen_task.post_processing()) << "Post-processing failed for random matrix";
 }
 
-TEST(nasedkin_e_matrix_column_max_value_mpi, Test_Max1) {
-  boost::mpi::communicator world;
+TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_64x64) {
+    auto taskData = std::make_shared<ppc::core::TaskData>();
+    taskData->inputs_count.push_back(64);
 
-  int numCols = 15;
-  int numRows = 5;
+    nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI strassen_task(taskData);
 
-  std::vector<int> matrix;
-  std::vector<int> resultParallel(numCols, 0);
+    std::vector<std::vector<double>> matrixA;
+    std::vector<std::vector<double>> matrixB;
+    nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI::generate_random_matrix(64, matrixA);
+    nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI::generate_random_matrix(64, matrixB);
+    strassen_task.set_matrices(matrixA, matrixB);
 
-  // Create TaskData
-  std::shared_ptr<ppc::core::TaskData> taskDataParallel = std::make_shared<ppc::core::TaskData>();
-
-  if (world.rank() == 0) {
-    const int totalSize = numCols * numRows;
-    matrix = generateRandomVector(totalSize);
-
-    taskDataParallel->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrix.data()));
-    taskDataParallel->inputs_count.emplace_back(matrix.size());
-    taskDataParallel->inputs_count.emplace_back(numCols);
-    taskDataParallel->inputs_count.emplace_back(numRows);
-    taskDataParallel->outputs.emplace_back(reinterpret_cast<uint8_t*>(resultParallel.data()));
-    taskDataParallel->outputs_count.emplace_back(resultParallel.size());
-  }
-
-  nasedkin_e_matrix_column_max_value_mpi::TestMPITaskParallel testMpiTaskParallel(taskDataParallel);
-  ASSERT_EQ(testMpiTaskParallel.validation(), true);
-  testMpiTaskParallel.pre_processing();
-  testMpiTaskParallel.run();
-  testMpiTaskParallel.post_processing();
-
-  if (world.rank() == 0) {
-    // Create data
-    std::vector<int> resultSequential(numCols, 0);
-
-    // Create TaskData
-    std::shared_ptr<ppc::core::TaskData> taskDataSequential = std::make_shared<ppc::core::TaskData>();
-
-    taskDataSequential->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrix.data()));
-    taskDataSequential->inputs_count.emplace_back(matrix.size());
-    taskDataSequential->inputs_count.emplace_back(numCols);
-    taskDataSequential->inputs_count.emplace_back(numRows);
-    taskDataSequential->outputs.emplace_back(reinterpret_cast<uint8_t*>(resultSequential.data()));
-    taskDataSequential->outputs_count.emplace_back(resultSequential.size());
-
-    // Create Task
-    nasedkin_e_matrix_column_max_value_mpi::TestMPITaskSequential testMpiTaskSequential(taskDataSequential);
-    ASSERT_EQ(testMpiTaskSequential.validation(), true);
-    testMpiTaskSequential.pre_processing();
-    testMpiTaskSequential.run();
-    testMpiTaskSequential.post_processing();
-
-    ASSERT_EQ(resultSequential, resultParallel);
-  }
+    ASSERT_TRUE(strassen_task.validation()) << "Validation failed for random matrix";
+    ASSERT_TRUE(strassen_task.pre_processing()) << "Pre-processing failed for random matrix";
+    ASSERT_TRUE(strassen_task.run()) << "Run failed for random matrix";
+    ASSERT_TRUE(strassen_task.post_processing()) << "Post-processing failed for random matrix";
 }
 
-TEST(nasedkin_e_matrix_column_max_value_mpi, Test_Max2) {
-  boost::mpi::communicator world;
+TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_128x128) {
+    auto taskData = std::make_shared<ppc::core::TaskData>();
+    taskData->inputs_count.push_back(128);
 
-  int numCols = 50;
-  int numRows = 50;
+    nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI strassen_task(taskData);
 
-  std::vector<int> matrix;
-  std::vector<int> resultParallel(numCols, 0);
+    std::vector<std::vector<double>> matrixA;
+    std::vector<std::vector<double>> matrixB;
+    nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI::generate_random_matrix(128, matrixA);
+    nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI::generate_random_matrix(128, matrixB);
+    strassen_task.set_matrices(matrixA, matrixB);
 
-  // Create TaskData
-  std::shared_ptr<ppc::core::TaskData> taskDataParallel = std::make_shared<ppc::core::TaskData>();
-
-  if (world.rank() == 0) {
-    const int totalSize = numCols * numRows;
-    matrix = generateRandomVector(totalSize);
-
-    taskDataParallel->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrix.data()));
-    taskDataParallel->inputs_count.emplace_back(matrix.size());
-    taskDataParallel->inputs_count.emplace_back(numCols);
-    taskDataParallel->inputs_count.emplace_back(numRows);
-    taskDataParallel->outputs.emplace_back(reinterpret_cast<uint8_t*>(resultParallel.data()));
-    taskDataParallel->outputs_count.emplace_back(resultParallel.size());
-  }
-
-  nasedkin_e_matrix_column_max_value_mpi::TestMPITaskParallel testMpiTaskParallel(taskDataParallel);
-  ASSERT_EQ(testMpiTaskParallel.validation(), true);
-  testMpiTaskParallel.pre_processing();
-  testMpiTaskParallel.run();
-  testMpiTaskParallel.post_processing();
-
-  if (world.rank() == 0) {
-    // Create data
-    std::vector<int> resultSequential(numCols, 0);
-
-    // Create TaskData
-    std::shared_ptr<ppc::core::TaskData> taskDataSequential = std::make_shared<ppc::core::TaskData>();
-
-    taskDataSequential->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrix.data()));
-    taskDataSequential->inputs_count.emplace_back(matrix.size());
-    taskDataSequential->inputs_count.emplace_back(numCols);
-    taskDataSequential->inputs_count.emplace_back(numRows);
-    taskDataSequential->outputs.emplace_back(reinterpret_cast<uint8_t*>(resultSequential.data()));
-    taskDataSequential->outputs_count.emplace_back(resultSequential.size());
-
-    // Create Task
-    nasedkin_e_matrix_column_max_value_mpi::TestMPITaskSequential testMpiTaskSequential(taskDataSequential);
-    ASSERT_EQ(testMpiTaskSequential.validation(), true);
-    testMpiTaskSequential.pre_processing();
-    testMpiTaskSequential.run();
-    testMpiTaskSequential.post_processing();
-
-    ASSERT_EQ(resultSequential, resultParallel);
-  }
+    ASSERT_TRUE(strassen_task.validation()) << "Validation failed for random matrix";
+    ASSERT_TRUE(strassen_task.pre_processing()) << "Pre-processing failed for random matrix";
+    ASSERT_TRUE(strassen_task.run()) << "Run failed for random matrix";
+    ASSERT_TRUE(strassen_task.post_processing()) << "Post-processing failed for random matrix";
 }
 
-TEST(nasedkin_e_matrix_column_max_value_mpi, Test_Max3) {
-  boost::mpi::communicator world;
+TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_256x256) {
+    auto taskData = std::make_shared<ppc::core::TaskData>();
+    taskData->inputs_count.push_back(256);
 
-  int numCols = 50;
-  int numRows = 100;
+    nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI strassen_task(taskData);
 
-  std::vector<int> matrix;
-  std::vector<int> resultParallel(numCols, 0);
+    std::vector<std::vector<double>> matrixA;
+    std::vector<std::vector<double>> matrixB;
+    nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI::generate_random_matrix(256, matrixA);
+    nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI::generate_random_matrix(256, matrixB);
+    strassen_task.set_matrices(matrixA, matrixB);
 
-  // Create TaskData
-  std::shared_ptr<ppc::core::TaskData> taskDataParallel = std::make_shared<ppc::core::TaskData>();
-
-  if (world.rank() == 0) {
-    const int totalSize = numCols * numRows;
-    matrix = generateRandomVector(totalSize);
-
-    taskDataParallel->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrix.data()));
-    taskDataParallel->inputs_count.emplace_back(matrix.size());
-    taskDataParallel->inputs_count.emplace_back(numCols);
-    taskDataParallel->inputs_count.emplace_back(numRows);
-    taskDataParallel->outputs.emplace_back(reinterpret_cast<uint8_t*>(resultParallel.data()));
-    taskDataParallel->outputs_count.emplace_back(resultParallel.size());
-  }
-
-  nasedkin_e_matrix_column_max_value_mpi::TestMPITaskParallel testMpiTaskParallel(taskDataParallel);
-  ASSERT_EQ(testMpiTaskParallel.validation(), true);
-  testMpiTaskParallel.pre_processing();
-  testMpiTaskParallel.run();
-  testMpiTaskParallel.post_processing();
-
-  if (world.rank() == 0) {
-    // Create data
-    std::vector<int> resultSequential(numCols, 0);
-
-    // Create TaskData
-    std::shared_ptr<ppc::core::TaskData> taskDataSequential = std::make_shared<ppc::core::TaskData>();
-
-    taskDataSequential->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrix.data()));
-    taskDataSequential->inputs_count.emplace_back(matrix.size());
-    taskDataSequential->inputs_count.emplace_back(numCols);
-    taskDataSequential->inputs_count.emplace_back(numRows);
-    taskDataSequential->outputs.emplace_back(reinterpret_cast<uint8_t*>(resultSequential.data()));
-    taskDataSequential->outputs_count.emplace_back(resultSequential.size());
-
-    // Create Task
-    nasedkin_e_matrix_column_max_value_mpi::TestMPITaskSequential testMpiTaskSequential(taskDataSequential);
-    ASSERT_EQ(testMpiTaskSequential.validation(), true);
-    testMpiTaskSequential.pre_processing();
-    testMpiTaskSequential.run();
-    testMpiTaskSequential.post_processing();
-
-    ASSERT_EQ(resultSequential, resultParallel);
-  }
-}
-
-TEST(nasedkin_e_matrix_column_max_value_mpi, Test_Max4) {
-  boost::mpi::communicator world;
-
-  int numCols = 70;
-  int numRows = 50;
-
-  std::vector<int> matrix;
-  std::vector<int> resultParallel(numCols, 0);
-
-  // Create TaskData
-  std::shared_ptr<ppc::core::TaskData> taskDataParallel = std::make_shared<ppc::core::TaskData>();
-
-  if (world.rank() == 0) {
-    const int totalSize = numCols * numRows;
-    matrix = generateRandomVector(totalSize);
-
-    taskDataParallel->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrix.data()));
-    taskDataParallel->inputs_count.emplace_back(matrix.size());
-    taskDataParallel->inputs_count.emplace_back(numCols);
-    taskDataParallel->inputs_count.emplace_back(numRows);
-    taskDataParallel->outputs.emplace_back(reinterpret_cast<uint8_t*>(resultParallel.data()));
-    taskDataParallel->outputs_count.emplace_back(resultParallel.size());
-  }
-
-  nasedkin_e_matrix_column_max_value_mpi::TestMPITaskParallel testMpiTaskParallel(taskDataParallel);
-  ASSERT_EQ(testMpiTaskParallel.validation(), true);
-  testMpiTaskParallel.pre_processing();
-  testMpiTaskParallel.run();
-  testMpiTaskParallel.post_processing();
-
-  if (world.rank() == 0) {
-    // Create data
-    std::vector<int> resultSequential(numCols, 0);
-
-    // Create TaskData
-    std::shared_ptr<ppc::core::TaskData> taskDataSequential = std::make_shared<ppc::core::TaskData>();
-
-    taskDataSequential->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrix.data()));
-    taskDataSequential->inputs_count.emplace_back(matrix.size());
-    taskDataSequential->inputs_count.emplace_back(numCols);
-    taskDataSequential->inputs_count.emplace_back(numRows);
-    taskDataSequential->outputs.emplace_back(reinterpret_cast<uint8_t*>(resultSequential.data()));
-    taskDataSequential->outputs_count.emplace_back(resultSequential.size());
-
-    // Create Task
-    nasedkin_e_matrix_column_max_value_mpi::TestMPITaskSequential testMpiTaskSequential(taskDataSequential);
-    ASSERT_EQ(testMpiTaskSequential.validation(), true);
-    testMpiTaskSequential.pre_processing();
-    testMpiTaskSequential.run();
-    testMpiTaskSequential.post_processing();
-
-    ASSERT_EQ(resultSequential, resultParallel);
-  }
-}
-
-TEST(nasedkin_e_matrix_column_max_value_mpi, Test_Max5) {
-  boost::mpi::communicator world;
-
-  int numCols = 300;
-  int numRows = 150;
-
-  std::vector<int> matrix;
-  std::vector<int> resultParallel(numCols, 0);
-
-  // Create TaskData
-  std::shared_ptr<ppc::core::TaskData> taskDataParallel = std::make_shared<ppc::core::TaskData>();
-
-  if (world.rank() == 0) {
-    const int totalSize = numCols * numRows;
-    matrix = generateRandomVector(totalSize);
-
-    taskDataParallel->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrix.data()));
-    taskDataParallel->inputs_count.emplace_back(matrix.size());
-    taskDataParallel->inputs_count.emplace_back(numCols);
-    taskDataParallel->inputs_count.emplace_back(numRows);
-    taskDataParallel->outputs.emplace_back(reinterpret_cast<uint8_t*>(resultParallel.data()));
-    taskDataParallel->outputs_count.emplace_back(resultParallel.size());
-  }
-
-  nasedkin_e_matrix_column_max_value_mpi::TestMPITaskParallel testMpiTaskParallel(taskDataParallel);
-  ASSERT_EQ(testMpiTaskParallel.validation(), true);
-  testMpiTaskParallel.pre_processing();
-  testMpiTaskParallel.run();
-  testMpiTaskParallel.post_processing();
-
-  if (world.rank() == 0) {
-    // Create data
-    std::vector<int> resultSequential(numCols, 0);
-
-    // Create TaskData
-    std::shared_ptr<ppc::core::TaskData> taskDataSequential = std::make_shared<ppc::core::TaskData>();
-
-    taskDataSequential->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrix.data()));
-    taskDataSequential->inputs_count.emplace_back(matrix.size());
-    taskDataSequential->inputs_count.emplace_back(numCols);
-    taskDataSequential->inputs_count.emplace_back(numRows);
-    taskDataSequential->outputs.emplace_back(reinterpret_cast<uint8_t*>(resultSequential.data()));
-    taskDataSequential->outputs_count.emplace_back(resultSequential.size());
-
-    // Create Task
-    nasedkin_e_matrix_column_max_value_mpi::TestMPITaskSequential testMpiTaskSequential(taskDataSequential);
-    ASSERT_EQ(testMpiTaskSequential.validation(), true);
-    testMpiTaskSequential.pre_processing();
-    testMpiTaskSequential.run();
-    testMpiTaskSequential.post_processing();
-
-    ASSERT_EQ(resultSequential, resultParallel);
-  }
+    ASSERT_TRUE(strassen_task.validation()) << "Validation failed for random matrix";
+    ASSERT_TRUE(strassen_task.pre_processing()) << "Pre-processing failed for random matrix";
+    ASSERT_TRUE(strassen_task.run()) << "Run failed for random matrix";
+    ASSERT_TRUE(strassen_task.post_processing()) << "Post-processing failed for random matrix";
 }
