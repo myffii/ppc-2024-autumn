@@ -1,13 +1,16 @@
 #include <gtest/gtest.h>
 #include <boost/mpi/timer.hpp>
 #include "core/perf/include/perf.hpp"
-#include "seq/nasedkin_e_strassen_algorithm/src/ops_seq.cpp"
 #include "seq/nasedkin_e_strassen_algorithm/include/ops_seq.hpp"
+#include "seq/nasedkin_e_strassen_algorithm/src/ops_seq.cpp"
 
 TEST(nasedkin_e_strassen_algorithm_seq, test_pipeline_run) {
   int matrixSize = 64;
 
-  auto strassenTask = std::make_shared<nasedkin_e_strassen_algorithm::StrassenAlgorithmSeq>(matrixSize);
+  auto taskData = std::make_shared<ppc::core::TaskData>();
+  taskData->inputs_count.push_back(matrixSize);
+
+  auto strassenTask = std::make_shared<nasedkin_e_strassen_algorithm::StrassenAlgorithmSeq>(taskData);
 
   std::vector<std::vector<double>> matrixA;
   std::vector<std::vector<double>> matrixB;
@@ -36,8 +39,11 @@ TEST(nasedkin_e_strassen_algorithm_seq, test_pipeline_run) {
 
 TEST(nasedkin_e_strassen_algorithm_seq, test_task_run) {
   int matrixSize = 64;
+  
+  auto taskData = std::make_shared<ppc::core::TaskData>();
+  taskData->inputs_count.push_back(matrixSize);
 
-  auto strassenTask = std::make_shared<nasedkin_e_strassen_algorithm::StrassenAlgorithmSeq>(matrixSize);
+  auto strassenTask = std::make_shared<nasedkin_e_strassen_algorithm::StrassenAlgorithmSeq>(taskData);
 
   std::vector<std::vector<double>> matrixA;
   std::vector<std::vector<double>> matrixB;
