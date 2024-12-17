@@ -5,7 +5,7 @@
 #include "seq/nasedkin_e_strassen_algorithm/include/ops_seq.hpp"
 
 TEST(nasedkin_e_strassen_algorithm_seq, test_pipeline_run) {
-  int matrixSize = 8;
+  int matrixSize = 64;
 
   auto strassenTask = std::make_shared<nasedkin_e_strassen_algorithm::StrassenAlgorithmSeq>(matrixSize);
 
@@ -35,7 +35,7 @@ TEST(nasedkin_e_strassen_algorithm_seq, test_pipeline_run) {
 }
 
 TEST(nasedkin_e_strassen_algorithm_seq, test_task_run) {
-  int matrixSize = 8;
+  int matrixSize = 64;
 
   auto strassenTask = std::make_shared<nasedkin_e_strassen_algorithm::StrassenAlgorithmSeq>(matrixSize);
 
