@@ -133,6 +133,8 @@ std::vector<std::vector<double>> StrassenAlgorithmMPI::strassen_multiply(const s
 
   auto C11 = add(P1, P4);
   auto C12 = add(P3, P2);
+  auto C21 = add(P2, P4);
+  auto C22 = subtract(P1, P3);
 
   return merge_matrices(C11, C12, C21, C22);
 }
