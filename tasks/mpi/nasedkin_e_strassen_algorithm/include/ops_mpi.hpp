@@ -39,6 +39,12 @@ class StrassenAlgorithmMPI : public ppc::core::Task {
                              std::vector<std::vector<double>>& C);
   static std::vector<std::vector<double>> strassen_multiply(const std::vector<std::vector<double>>& A,
                                                             const std::vector<std::vector<double>>& B);
+
+  static std::vector<std::vector<double>> matrix_add(const std::vector<std::vector<double>>& A,
+                                                     const std::vector<std::vector<double>>& B);
+
+  static std::vector<std::vector<double>> matrix_subtract(const std::vector<std::vector<double>>& A,
+                                                          const std::vector<std::vector<double>>& B);
 };
 
 }  // namespace nasedkin_e_strassen_algorithm
