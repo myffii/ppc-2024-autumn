@@ -3,7 +3,17 @@
 #include "mpi/nasedkin_e_strassen_algorithm/include/ops_mpi.hpp"
 #include "mpi/nasedkin_e_strassen_algorithm/src/ops_mpi.cpp"
 
+boost::mpi::environment env;
+boost::mpi::communicator world;
+
+void log_process_count() {
+  if (world.rank() == 0) {
+    ::testing::Message() << "Number of processes: " << world.size() << "\n";
+  }
+}
+
 TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_2x2) {
+    log_process_count();
     auto taskData = std::make_shared<ppc::core::TaskData>();
     taskData->inputs_count.push_back(2);
 
@@ -22,6 +32,7 @@ TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_2x2) {
 }
 
 TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_4x4) {
+    log_process_count();
     auto taskData = std::make_shared<ppc::core::TaskData>();
     taskData->inputs_count.push_back(4);
 
@@ -40,6 +51,7 @@ TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_4x4) {
 }
 
 TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_8x8) {
+    log_process_count();
     auto taskData = std::make_shared<ppc::core::TaskData>();
     taskData->inputs_count.push_back(8);
 
@@ -58,6 +70,7 @@ TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_8x8) {
 }
 
 TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_16x16) {
+  log_process_count();
   auto taskData = std::make_shared<ppc::core::TaskData>();
   taskData->inputs_count.push_back(16);
 
@@ -76,6 +89,7 @@ TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_16x16) {
 }
 
 TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_32x32) {
+  log_process_count();
   auto taskData = std::make_shared<ppc::core::TaskData>();
   taskData->inputs_count.push_back(32);
 
@@ -94,6 +108,7 @@ TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_32x32) {
 }
 
 TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_64x64) {
+    log_process_count();
     auto taskData = std::make_shared<ppc::core::TaskData>();
     taskData->inputs_count.push_back(64);
 
@@ -112,6 +127,7 @@ TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_64x64) {
 }
 
 TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_128x128) {
+    log_process_count();
     auto taskData = std::make_shared<ppc::core::TaskData>();
     taskData->inputs_count.push_back(128);
 
@@ -130,6 +146,7 @@ TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_128x128) {
 }
 
 TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_256x256) {
+     log_process_count();
     auto taskData = std::make_shared<ppc::core::TaskData>();
     taskData->inputs_count.push_back(256);
 
@@ -148,6 +165,7 @@ TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_256x256) {
 }
 
 TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_512x512) {
+  log_process_count();
   auto taskData = std::make_shared<ppc::core::TaskData>();
   taskData->inputs_count.push_back(512);
 
