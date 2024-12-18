@@ -92,9 +92,17 @@ std::vector<std::vector<double>> StrassenAlgorithmMPI::strassen_multiply(const s
     }
     return C;
   }
+  
+  std::vector<std::vector<double>> A11;
+  std::vector<std::vector<double>> A12;
+  std::vector<std::vector<double>> A21;
+  std::vector<std::vector<double>> A22;
 
-  std::vector<std::vector<double>> A11, A12, A21, A22;
-  std::vector<std::vector<double>> B11, B12, B21, B22;
+  std::vector<std::vector<double>> B11;
+  std::vector<std::vector<double>> B12;
+  std::vector<std::vector<double>> B21;
+  std::vector<std::vector<double>> B22;
+
   split_matrix(A, A11, A12, A21, A22);
   split_matrix(B, B11, B12, B21, B22);
 
