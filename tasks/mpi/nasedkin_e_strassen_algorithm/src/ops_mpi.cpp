@@ -34,22 +34,34 @@ bool StrassenAlgorithmMPI::validation() {
 }
 
 bool StrassenAlgorithmMPI::run() {
-  resultMatrix = strassen_multiply(matrixA, matrixB);
+  int n = matrixA.size();
+  int rows_per_process = n / world.size();
+  int remainder = n % world.size();
+
+  int start_row = world.rank() * rows_per_process + std::min(world.rank(), remainder);
+  int end_row = start_row + rows_per_process + (world.rank() < remainder ? 1 : 0);
+
+  std::vector<std::vector<double>> localA(end_row - start_row, std::vector<double>(n));
+  std::vector<std::vector<double>> localB(n, std::vector<double>(n));
+  std::vector<std::vector<double>> localResult(end_row - start_row, std::vector<double>(n));
+
+  boost::mpi::scatter(world, matrixA, localA, 0);
+  boost::mpi::broadcast(world, matrixB, 0);
+
+  for (size_t i = 0; i < localA.size(); ++i) {
+    for (size_t j = 0; j < n; ++j) {
+      for (size_t k = 0; k < n; ++k) {
+        localResult[i][j] += localA[i][k] * matrixB[k][j];
+      }
+    }
+  }
+
+  boost::mpi::gather(world, localResult, resultMatrix, 0);
+
   return true;
 }
 
-bool StrassenAlgorithmMPI::post_processing() {
-  if (world.rank() == 0) {
-    std::cout << "Resulting Matrix:\n";
-    for (const auto& row : resultMatrix) {
-      for (auto elem : row) {
-        std::cout << elem << " ";
-      }
-      std::cout << "\n";
-    }
-  }
-  return true;
-}
+bool StrassenAlgorithmMPI::post_processing() { return true; }
 
 std::vector<std::vector<double>> StrassenAlgorithmMPI::add(const std::vector<std::vector<double>>& A,
                                                            const std::vector<std::vector<double>>& B) {
@@ -135,7 +147,7 @@ std::vector<std::vector<double>> StrassenAlgorithmMPI::strassen_multiply(const s
   auto C12 = add(P3, P2);
   auto C21 = add(P2, P4);
   auto C22 = subtract(P1, P3);
-  
+
   return merge_matrices(C11, C12, C21, C22);
 }
 
