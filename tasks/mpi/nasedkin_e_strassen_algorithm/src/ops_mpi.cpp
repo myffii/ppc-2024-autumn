@@ -25,56 +25,8 @@ void StrassenAlgorithmMPI::set_matrices(const std::vector<std::vector<double>>& 
   matrixB = B;
 }
 
-void StrassenAlgorithmMPI::distribute_matrix_rows(const std::vector<std::vector<double>>& matrix,
-                                                  std::vector<double>& local_flat_matrix) {
-  int rows = matrix.size();
-  int cols = matrix[0].size();
-  int local_rows = rows / world.size();
-
-  std::vector<double> flat_matrix;
-  for (const auto& row : matrix) {
-    flat_matrix.insert(flat_matrix.end(), row.begin(), row.end());
-  }
-
-  if (world.rank() == 0) {
-    boost::mpi::scatter(world, flat_matrix.data(), local_rows * cols, local_flat_matrix.data(), 0);
-  } else {
-    local_flat_matrix.resize(local_rows * cols);
-    boost::mpi::scatter(world, flat_matrix.data(), local_rows * cols, local_flat_matrix.data(), 0);
-  }
-}
-
-void StrassenAlgorithmMPI::gather_result_rows(const std::vector<double>& local_flat_result,
-                                              std::vector<std::vector<double>>& global_result) {
-  int rows = global_result.size();
-  int cols = global_result[0].size();
-  int local_rows = rows / world.size();
-
-  std::vector<double> flat_result;
-  if (world.rank() == 0) {
-    flat_result.resize(rows * cols);
-  }
-  boost::mpi::gather(world, local_flat_result.data(), local_rows * cols, flat_result.data(), 0);
-
-  if (world.rank() == 0) {
-    global_result.clear();
-    for (int i = 0; i < rows; ++i) {
-      global_result.emplace_back(flat_result.begin() + i * cols, flat_result.begin() + (i + 1) * cols);
-    }
-  }
-}
-
 bool StrassenAlgorithmMPI::pre_processing() {
-  if (world.rank() == 0) {
-    if (matrixA.empty() || matrixB.empty() || matrixA.size() != matrixB.size()) return false;
-  }
-
-  std::vector<double> local_flat_matrixA;
-  std::vector<double> local_flat_matrixB;
-  distribute_matrix_rows(matrixA, local_flat_matrixA);
-  distribute_matrix_rows(matrixB, local_flat_matrixB);
-
-  return true;
+  return !matrixA.empty() && !matrixB.empty() && matrixA.size() == matrixB.size();
 }
 
 bool StrassenAlgorithmMPI::validation() {
@@ -82,25 +34,22 @@ bool StrassenAlgorithmMPI::validation() {
 }
 
 bool StrassenAlgorithmMPI::run() {
-
-  std::vector<double> local_flat_matrixA;
-  std::vector<double> local_flat_matrixB;
-  std::vector<double> local_flat_result;
-
-  distribute_matrix_rows(matrixA, local_flat_matrixA);
-  distribute_matrix_rows(matrixB, local_flat_matrixB);
-
-  local_flat_result = strassen_multiply(local_flat_matrixA, local_flat_matrixB);
-
-  if (world.rank() == 0) {
-    resultMatrix.resize(matrixA.size(), std::vector<double>(matrixA.size()));
-  }
-  gather_result_rows(local_flat_result, resultMatrix);
-
+  resultMatrix = strassen_multiply(matrixA, matrixB);
   return true;
 }
 
-bool StrassenAlgorithmMPI::post_processing() { return true; }
+bool StrassenAlgorithmMPI::post_processing() {
+  if (world.rank() == 0) {
+    std::cout << "Resulting Matrix:\n";
+    for (const auto& row : resultMatrix) {
+      for (auto elem : row) {
+        std::cout << elem << " ";
+      }
+      std::cout << "\n";
+    }
+  }
+  return true;
+}
 
 std::vector<std::vector<double>> StrassenAlgorithmMPI::add(const std::vector<std::vector<double>>& A,
                                                            const std::vector<std::vector<double>>& B) {
@@ -184,10 +133,8 @@ std::vector<std::vector<double>> StrassenAlgorithmMPI::strassen_multiply(const s
 
   auto C11 = add(P1, P4);
   auto C12 = add(P3, P2);
-  auto C21 = add(P2, P4);
-  auto C22 = subtract(P1, P3);
 
-  return merge_matrices(C11, C12, C21, C22);
+  return merge_matrices(C11, C12, C12, C11);
 }
 
 }  // namespace nasedkin_e_strassen_algorithm
