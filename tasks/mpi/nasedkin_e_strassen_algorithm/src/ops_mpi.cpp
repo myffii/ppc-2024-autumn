@@ -81,6 +81,7 @@ std::vector<std::vector<double>> strassen_multiply(const std::vector<std::vector
                                                    const std::vector<std::vector<double>>& B) {
   int n = A.size();
   if (n <= 2) {
+
     std::vector<std::vector<double>> C(n, std::vector<double>(n, 0.0));
     for (int i = 0; i < n; ++i) {
       for (int j = 0; j < n; ++j) {
@@ -120,7 +121,6 @@ bool StrassenAlgorithmMPI::pre_processing() {
   generate_random_matrix(size, matrixA);
   generate_random_matrix(size, matrixB);
 
-  int rank = world.rank();
   int num_procs = world.size();
   int rows_per_proc = size / num_procs;
 
@@ -136,29 +136,30 @@ bool StrassenAlgorithmMPI::pre_processing() {
     }
   }
 
-  boost::mpi::scatter(world, flat_A, &local_A[0][0], rows_per_proc * size, 0);
-  boost::mpi::scatter(world, flat_B, &local_B[0][0], rows_per_proc * size, 0);
+  boost::mpi::scatter(world, flat_A, local_A[0].data(), rows_per_proc * size, 0);
+  boost::mpi::scatter(world, flat_B, local_B[0].data(), rows_per_proc * size, 0);
 
   return true;
 }
 
 bool StrassenAlgorithmMPI::validation() {
+
   int size = taskData->inputs_count[0];
-  return !(size <= 0 || (size & (size - 1)) != 0);
+  return size > 0 && (size & (size - 1)) == 0;
 }
 
 bool StrassenAlgorithmMPI::run() {
+
   int size = taskData->inputs_count[0];
-  int rank = world.rank();
   int num_procs = world.size();
   int rows_per_proc = size / num_procs;
 
   std::vector<std::vector<double>> local_C = strassen_multiply(local_A, local_B);
 
   std::vector<double> flat_C(size * size);
-  boost::mpi::gather(world, &local_C[0][0], rows_per_proc * size, flat_C.data(), 0);
+  boost::mpi::gather(world, local_C[0].data(), rows_per_proc * size, flat_C.data(), 0);
 
-  if (rank == 0) {
+  if (world.rank() == 0) {
     matrixC.resize(size, std::vector<double>(size));
     for (int i = 0; i < size; ++i) {
       for (int j = 0; j < size; ++j) {
@@ -170,6 +171,8 @@ bool StrassenAlgorithmMPI::run() {
   return true;
 }
 
-bool StrassenAlgorithmMPI::post_processing() { return true; }
+bool StrassenAlgorithmMPI::post_processing() {
+  return true;
+}
 
 }  // namespace nasedkin_e_strassen_algorithm
