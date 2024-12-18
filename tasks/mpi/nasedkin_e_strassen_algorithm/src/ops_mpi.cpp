@@ -81,7 +81,6 @@ std::vector<std::vector<double>> strassen_multiply(const std::vector<std::vector
                                                    const std::vector<std::vector<double>>& B) {
   int n = A.size();
   if (n <= 2) {
-
     std::vector<std::vector<double>> C(n, std::vector<double>(n, 0.0));
     for (int i = 0; i < n; ++i) {
       for (int j = 0; j < n; ++j) {
@@ -93,8 +92,16 @@ std::vector<std::vector<double>> strassen_multiply(const std::vector<std::vector
     return C;
   }
 
-  std::vector<std::vector<double>> A11, A12, A21, A22;
-  std::vector<std::vector<double>> B11, B12, B21, B22;
+  std::vector<std::vector<double>> A11;
+  std::vector<std::vector<double>> A12;
+  std::vector<std::vector<double>> A21;
+  std::vector<std::vector<double>> A22;
+
+  std::vector<std::vector<double>> B11;
+  std::vector<std::vector<double>> B12;
+  std::vector<std::vector<double>> B21;
+  std::vector<std::vector<double>> B22;
+
   split_matrix(A, A11, A12, A21, A22);
   split_matrix(B, B11, B12, B21, B22);
 
@@ -143,13 +150,11 @@ bool StrassenAlgorithmMPI::pre_processing() {
 }
 
 bool StrassenAlgorithmMPI::validation() {
-
   int size = taskData->inputs_count[0];
   return size > 0 && (size & (size - 1)) == 0;
 }
 
 bool StrassenAlgorithmMPI::run() {
-
   int size = taskData->inputs_count[0];
   int num_procs = world.size();
   int rows_per_proc = size / num_procs;
