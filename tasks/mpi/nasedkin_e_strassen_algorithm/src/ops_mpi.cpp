@@ -8,7 +8,7 @@
 
 namespace nasedkin_e_strassen_algorithm {
 
-void generate_random_matrix(int size, std::vector<std::vector<double>>& matrix) {
+void StrassenAlgorithmMPI::generate_random_matrix(int size, std::vector<std::vector<double>>& matrix) {
   matrix.resize(size, std::vector<double>(size, 0.0));
   std::srand(static_cast<unsigned>(std::time(nullptr)));
   for (int i = 0; i < size; ++i) {
@@ -18,9 +18,9 @@ void generate_random_matrix(int size, std::vector<std::vector<double>>& matrix) 
   }
 }
 
-void split_matrix(const std::vector<std::vector<double>>& matrix,
-                  std::vector<std::vector<double>>& A11, std::vector<std::vector<double>>& A12,
-                  std::vector<std::vector<double>>& A21, std::vector<std::vector<double>>& A22) {
+void StrassenAlgorithmMPI::split_matrix(const std::vector<std::vector<double>>& matrix,
+                                        std::vector<std::vector<double>>& A11, std::vector<std::vector<double>>& A12,
+                                        std::vector<std::vector<double>>& A21, std::vector<std::vector<double>>& A22) {
   int n = matrix.size();
   int half = n / 2;
   A11.resize(half, std::vector<double>(half));
@@ -38,9 +38,9 @@ void split_matrix(const std::vector<std::vector<double>>& matrix,
   }
 }
 
-void merge_matrices(const std::vector<std::vector<double>>& C11, const std::vector<std::vector<double>>& C12,
-                    const std::vector<std::vector<double>>& C21, const std::vector<std::vector<double>>& C22,
-                    std::vector<std::vector<double>>& C) {
+void StrassenAlgorithmMPI::merge_matrices(const std::vector<std::vector<double>>& C11, const std::vector<std::vector<double>>& C12,
+                                          const std::vector<std::vector<double>>& C21, const std::vector<std::vector<double>>& C22,
+                                          std::vector<std::vector<double>>& C) {
   int half = C11.size();
   int n = half * 2;
   C.resize(n, std::vector<double>(n));
@@ -55,7 +55,7 @@ void merge_matrices(const std::vector<std::vector<double>>& C11, const std::vect
   }
 }
 
-std::vector<std::vector<double>> matrix_add(const std::vector<std::vector<double>>& A, const std::vector<std::vector<double>>& B) {
+std::vector<std::vector<double>> StrassenAlgorithmMPI::matrix_add(const std::vector<std::vector<double>>& A, const std::vector<std::vector<double>>& B) {
   int n = A.size();
   std::vector<std::vector<double>> result(n, std::vector<double>(n, 0.0));
   for (int i = 0; i < n; ++i) {
@@ -66,7 +66,7 @@ std::vector<std::vector<double>> matrix_add(const std::vector<std::vector<double
   return result;
 }
 
-std::vector<std::vector<double>> matrix_subtract(const std::vector<std::vector<double>>& A, const std::vector<std::vector<double>>& B) {
+std::vector<std::vector<double>> StrassenAlgorithmMPI::matrix_subtract(const std::vector<std::vector<double>>& A, const std::vector<std::vector<double>>& B) {
   int n = A.size();
   std::vector<std::vector<double>> result(n, std::vector<double>(n, 0.0));
   for (int i = 0; i < n; ++i) {
@@ -77,10 +77,11 @@ std::vector<std::vector<double>> matrix_subtract(const std::vector<std::vector<d
   return result;
 }
 
-std::vector<std::vector<double>> strassen_multiply(const std::vector<std::vector<double>>& A,
-                                                   const std::vector<std::vector<double>>& B) {
+std::vector<std::vector<double>> StrassenAlgorithmMPI::strassen_multiply(const std::vector<std::vector<double>>& A,
+                                                                         const std::vector<std::vector<double>>& B) {
   int n = A.size();
   if (n <= 2) {
+
     std::vector<std::vector<double>> C(n, std::vector<double>(n, 0.0));
     for (int i = 0; i < n; ++i) {
       for (int j = 0; j < n; ++j) {
@@ -92,16 +93,8 @@ std::vector<std::vector<double>> strassen_multiply(const std::vector<std::vector
     return C;
   }
 
-  std::vector<std::vector<double>> A11;
-  std::vector<std::vector<double>> A12;
-  std::vector<std::vector<double>> A21;
-  std::vector<std::vector<double>> A22;
-
-  std::vector<std::vector<double>> B11;
-  std::vector<std::vector<double>> B12;
-  std::vector<std::vector<double>> B21;
-  std::vector<std::vector<double>> B22;
-
+  std::vector<std::vector<double>> A11, A12, A21, A22;
+  std::vector<std::vector<double>> B11, B12, B21, B22;
   split_matrix(A, A11, A12, A21, A22);
   split_matrix(B, B11, B12, B21, B22);
 
@@ -124,6 +117,7 @@ std::vector<std::vector<double>> strassen_multiply(const std::vector<std::vector
 }
 
 bool StrassenAlgorithmMPI::pre_processing() {
+
   int size = taskData->inputs_count[0];
   generate_random_matrix(size, matrixA);
   generate_random_matrix(size, matrixB);
@@ -155,6 +149,7 @@ bool StrassenAlgorithmMPI::validation() {
 }
 
 bool StrassenAlgorithmMPI::run() {
+
   int size = taskData->inputs_count[0];
   int num_procs = world.size();
   int rows_per_proc = size / num_procs;

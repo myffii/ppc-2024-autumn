@@ -20,7 +20,9 @@ class StrassenAlgorithmMPI : public ppc::core::Task {
   bool post_processing() override;
 
   void set_matrices(const std::vector<std::vector<double>>& matrixA, const std::vector<std::vector<double>>& matrixB);
-  void generate_random_matrix(int size, std::vector<std::vector<double>>& matrix);
+
+  static void generate_random_matrix(int size, std::vector<std::vector<double>>& matrix);
+
   const std::vector<std::vector<double>>& get_result_matrix() const { return matrixC; }
 
  private:
@@ -28,16 +30,21 @@ class StrassenAlgorithmMPI : public ppc::core::Task {
 
   std::vector<std::vector<double>> matrixA;
   std::vector<std::vector<double>> matrixB;
+
   std::vector<std::vector<double>> local_A;
   std::vector<std::vector<double>> local_B;
+
   std::vector<std::vector<double>> matrixC;
+
   static void split_matrix(const std::vector<std::vector<double>>& matrix,
                            std::vector<std::vector<double>>& A11, std::vector<std::vector<double>>& A12,
                            std::vector<std::vector<double>>& A21, std::vector<std::vector<double>>& A22);
+
   static void merge_matrices(const std::vector<std::vector<double>>& C11, const std::vector<std::vector<double>>& C12,
                              const std::vector<std::vector<double>>& C21, const std::vector<std::vector<double>>& C22,
                              std::vector<std::vector<double>>& C);
-  std::vector<std::vector<double>> strassen_multiply(const std::vector<std::vector<double>>& A,
+
+  static std::vector<std::vector<double>> strassen_multiply(const std::vector<std::vector<double>>& A,
                                                             const std::vector<std::vector<double>>& B);
 
   static std::vector<std::vector<double>> matrix_add(const std::vector<std::vector<double>>& A,
