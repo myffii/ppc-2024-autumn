@@ -27,5 +27,4 @@ TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_2x2) {
   ASSERT_TRUE(strassen_task.pre_processing()) << "Pre-processing failed for random matrix";
   ASSERT_TRUE(strassen_task.run()) << "Run failed for random matrix";
   ASSERT_TRUE(strassen_task.post_processing()) << "Post-processing failed for random matrix";
-
 }
