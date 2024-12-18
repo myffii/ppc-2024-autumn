@@ -25,8 +25,33 @@ void StrassenAlgorithmMPI::set_matrices(const std::vector<std::vector<double>>& 
   matrixB = B;
 }
 
+void StrassenAlgorithmMPI::distribute_matrix_rows(const std::vector<std::vector<double>>& matrix,
+                                                  std::vector<std::vector<double>>& local_matrix) {
+  int rows = matrix.size();
+  int cols = matrix[0].size();
+  int local_rows = rows / world.size();
+  if (world.rank() == 0) {
+    boost::mpi::scatter(world, matrix, local_matrix, 0);
+  } else {
+    local_matrix.resize(local_rows, std::vector<double>(cols));
+    boost::mpi::scatter(world, matrix, local_matrix, 0);
+  }
+}
+
+void StrassenAlgorithmMPI::gather_result_rows(std::vector<std::vector<double>>& local_result,
+                                              std::vector<std::vector<double>>& global_result) {
+  int rows = global_result.size();
+  int local_rows = rows / world.size();
+  boost::mpi::gather(world, local_result, global_result, 0);
+}
+
 bool StrassenAlgorithmMPI::pre_processing() {
-  return !matrixA.empty() && !matrixB.empty() && matrixA.size() == matrixB.size();
+  if (world.rank() == 0) {
+    if (matrixA.empty() || matrixB.empty() || matrixA.size() != matrixB.size()) return false;
+  }
+  distribute_matrix_rows(matrixA, matrixA);
+  distribute_matrix_rows(matrixB, matrixB);
+  return true;
 }
 
 bool StrassenAlgorithmMPI::validation() {
@@ -34,22 +59,15 @@ bool StrassenAlgorithmMPI::validation() {
 }
 
 bool StrassenAlgorithmMPI::run() {
-  resultMatrix = strassen_multiply(matrixA, matrixB);
+  auto local_result = strassen_multiply(matrixA, matrixB);
+  if (world.rank() == 0) {
+    resultMatrix.resize(matrixA.size(), std::vector<double>(matrixA.size()));
+  }
+  gather_result_rows(local_result, resultMatrix);
   return true;
 }
 
-bool StrassenAlgorithmMPI::post_processing() {
-  if (world.rank() == 0) {
-    std::cout << "Resulting Matrix:\n";
-    for (const auto& row : resultMatrix) {
-      for (auto elem : row) {
-        std::cout << elem << " ";
-      }
-      std::cout << "\n";
-    }
-  }
-  return true;
-}
+bool StrassenAlgorithmMPI::post_processing() { return true; }
 
 std::vector<std::vector<double>> StrassenAlgorithmMPI::add(const std::vector<std::vector<double>>& A,
                                                            const std::vector<std::vector<double>>& B) {

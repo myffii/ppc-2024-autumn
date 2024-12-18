@@ -1,6 +1,7 @@
 #pragma once
 
 #include <boost/mpi/communicator.hpp>
+#include <boost/mpi/collectives.hpp>
 #include <cstdlib>
 #include <ctime>
 #include <memory>
@@ -31,18 +32,23 @@ class StrassenAlgorithmMPI : public ppc::core::Task {
   std::vector<std::vector<double>> strassen_multiply(const std::vector<std::vector<double>>& A,
                                                      const std::vector<std::vector<double>>& B);
   static std::vector<std::vector<double>> add(const std::vector<std::vector<double>>& A,
-                                       const std::vector<std::vector<double>>& B);
+                                              const std::vector<std::vector<double>>& B);
   static std::vector<std::vector<double>> subtract(const std::vector<std::vector<double>>& A,
-                                            const std::vector<std::vector<double>>& B);
+                                                   const std::vector<std::vector<double>>& B);
   static void split_matrix(const std::vector<std::vector<double>>& matrix,
-                    std::vector<std::vector<double>>& A11,
-                    std::vector<std::vector<double>>& A12,
-                    std::vector<std::vector<double>>& A21,
-                    std::vector<std::vector<double>>& A22);
+                           std::vector<std::vector<double>>& A11,
+                           std::vector<std::vector<double>>& A12,
+                           std::vector<std::vector<double>>& A21,
+                           std::vector<std::vector<double>>& A22);
   static std::vector<std::vector<double>> merge_matrices(const std::vector<std::vector<double>>& C11,
-                                                  const std::vector<std::vector<double>>& C12,
-                                                  const std::vector<std::vector<double>>& C21,
-                                                  const std::vector<std::vector<double>>& C22);
+                                                         const std::vector<std::vector<double>>& C12,
+                                                         const std::vector<std::vector<double>>& C21,
+                                                         const std::vector<std::vector<double>>& C22);
+
+  void distribute_matrix_rows(const std::vector<std::vector<double>>& matrix,
+                              std::vector<std::vector<double>>& local_matrix);
+  void gather_result_rows(std::vector<std::vector<double>>& local_result,
+                          std::vector<std::vector<double>>& global_result);
 };
 
 }  // namespace nasedkin_e_strassen_algorithm
