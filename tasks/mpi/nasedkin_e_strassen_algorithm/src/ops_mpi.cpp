@@ -38,6 +38,11 @@ void StrassenAlgorithmMPI::split_matrix(const std::vector<std::vector<double>>& 
   }
 }
 
+void StrassenAlgorithmMPI::set_matrices(const std::vector<std::vector<double>>& matrixA, const std::vector<std::vector<double>>& matrixB) {
+  this->matrixA = matrixA;
+  this->matrixB = matrixB;
+}
+
 void StrassenAlgorithmMPI::merge_matrices(const std::vector<std::vector<double>>& C11, const std::vector<std::vector<double>>& C12,
                                           const std::vector<std::vector<double>>& C21, const std::vector<std::vector<double>>& C22,
                                           std::vector<std::vector<double>>& C) {
@@ -92,7 +97,7 @@ std::vector<std::vector<double>> StrassenAlgorithmMPI::strassen_multiply(const s
     }
     return C;
   }
-  
+
   std::vector<std::vector<double>> A11;
   std::vector<std::vector<double>> A12;
   std::vector<std::vector<double>> A21;
