@@ -49,16 +49,23 @@ bool StrassenAlgorithmMPI::run() {
   int start_row = rank * rows_per_proc;
   int end_row = (rank == size - 1) ? n : start_row + rows_per_proc;
 
-  std::vector<std::vector<double>> local_A(rows_per_proc);
-  std::vector<std::vector<double>> local_B(rows_per_proc);
-  for (int i = 0; i < rows_per_proc; ++i) {
-    local_A[i] = matrixA[start_row + i];
-    local_B[i] = matrixB[start_row + i];
+  std::vector<std::vector<double>> local_A(end_row - start_row);
+  std::vector<std::vector<double>> local_B(end_row - start_row);
+
+  for (int i = start_row; i < end_row; ++i) {
+    local_A[i - start_row] = matrixA[i];
+    local_B[i - start_row] = matrixB[i];
   }
 
   std::vector<std::vector<double>> local_result = strassen_multiply(local_A, local_B);
 
+  std::vector<std::vector<double>> resultMatrix;
+  if (rank == 0) {
+    resultMatrix.resize(n, std::vector<double>(n));
+  }
+
   boost::mpi::gather(world, local_result, resultMatrix, 0);
+
   return true;
 }
 
