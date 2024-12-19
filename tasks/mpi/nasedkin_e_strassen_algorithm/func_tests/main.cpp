@@ -4,6 +4,8 @@
 #include "mpi/nasedkin_e_strassen_algorithm/src/ops_mpi.cpp"
 
 TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_2x2) {
+  boost::mpi::communicator world;
+
   auto taskData = std::make_shared<ppc::core::TaskData>();
   taskData->inputs_count.push_back(2);
 
@@ -22,6 +24,8 @@ TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_2x2) {
 }
 
 TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_4x4) {
+  boost::mpi::communicator world;
+
   auto taskData = std::make_shared<ppc::core::TaskData>();
   taskData->inputs_count.push_back(4);
 
@@ -40,6 +44,8 @@ TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_4x4) {
 }
 
 TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_8x8) {
+  boost::mpi::communicator world;
+
   auto taskData = std::make_shared<ppc::core::TaskData>();
   taskData->inputs_count.push_back(8);
 
@@ -59,6 +65,8 @@ TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_8x8) {
 
 
 TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_16x16) {
+  boost::mpi::communicator world;
+
   auto taskData = std::make_shared<ppc::core::TaskData>();
   taskData->inputs_count.push_back(16);
 
@@ -77,6 +85,8 @@ TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_16x16) {
 }
 
 TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_32x32) {
+  boost::mpi::communicator world;
+
     auto taskData = std::make_shared<ppc::core::TaskData>();
     taskData->inputs_count.push_back(32);
 

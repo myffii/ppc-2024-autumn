@@ -4,6 +4,7 @@
 #include <iostream>
 #include <random>
 #include <boost/mpi/collectives.hpp>
+#include <boost/serialization/vector.hpp>
 
 namespace nasedkin_e_strassen_algorithm {
 
@@ -34,22 +35,44 @@ bool StrassenAlgorithmMPI::validation() {
 }
 
 bool StrassenAlgorithmMPI::run() {
-  resultMatrix = strassen_multiply(matrixA, matrixB);
+  int rank = world.rank();
+  int size = world.size();
+
+  int n = matrixA.size(); // Размер матрицы
+  if (n % size != 0) {
+    return false;
+  }
+
+  int rows_per_process = n / size;
+
+  // Матрица для хранения локального результата
+  std::vector<std::vector<double>> local_result(rows_per_process, std::vector<double>(n));
+
+  // Распределение строк матрицы A между процессами
+  std::vector<std::vector<double>> local_A(rows_per_process, std::vector<double>(n));
+  boost::mpi::scatter(world, matrixA, local_A, 0);
+
+  // Передача матрицы B всем процессам
+  boost::mpi::broadcast(world, matrixB, 0);
+
+  // Локальное умножение строк local_A на B
+  for (int i = 0; i < rows_per_process; ++i) {
+    for (int j = 0; j < n; ++j) {
+      local_result[i][j] = 0.0;
+      for (int k = 0; k < n; ++k) {
+        local_result[i][j] += local_A[i][k] * matrixB[k][j];
+      }
+    }
+  }
+
+  // Сбор всех результатов
+  boost::mpi::gather(world, local_result, resultMatrix, 0);
+
   return true;
 }
 
-bool StrassenAlgorithmMPI::post_processing() {
-  if (world.rank() == 0) {
-    std::cout << "Resulting Matrix:\n";
-    for (const auto& row : resultMatrix) {
-      for (auto elem : row) {
-        std::cout << elem << " ";
-      }
-      std::cout << "\n";
-    }
-  }
-  return true;
-}
+
+bool StrassenAlgorithmMPI::post_processing() { return true; }
 
 std::vector<std::vector<double>> StrassenAlgorithmMPI::add(const std::vector<std::vector<double>>& A,
                                                            const std::vector<std::vector<double>>& B) {
