@@ -1,63 +1,54 @@
 #pragma once
 
-#include <gtest/gtest.h>
-
-#include <boost/mpi.hpp>
-#include <boost/mpi/collectives.hpp>
 #include <boost/mpi/communicator.hpp>
+#include <cstdlib>
+#include <ctime>
 #include <memory>
-#include <utility>
 #include <vector>
 
 #include "core/task/include/task.hpp"
 
-namespace nasedkin_e_strassen_algorithm_mpi {
+namespace nasedkin_e_strassen_algorithm {
 
-class StrassenSequential : public ppc::core::Task {
+class StrassenAlgorithmMPI : public ppc::core::Task {
  public:
-  explicit StrassenSequential(std::shared_ptr<ppc::core::TaskData> taskData_) : Task(std::move(taskData_)) {}
+  explicit StrassenAlgorithmMPI(std::shared_ptr<ppc::core::TaskData> taskData_)
+      : Task(std::move(taskData_)) {}
+
   bool pre_processing() override;
   bool validation() override;
   bool run() override;
   bool post_processing() override;
 
- private:
-  std::vector<double> A_;
-  std::vector<double> B_;
-  std::vector<double> C_;
-  size_t n;
-
-  void strassen_multiply(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, size_t n);
-};
-
-class StrassenParallel : public ppc::core::Task {
- public:
-  explicit StrassenParallel(std::shared_ptr<ppc::core::TaskData> taskData_) : Task(std::move(taskData_)) {}
-  bool pre_processing() override;
-  bool validation() override;
-  bool run() override;
-  bool post_processing() override;
+  static void generate_random_matrix(int size, std::vector<std::vector<double>>& matrix);
+  void set_matrices(const std::vector<std::vector<double>>& A,
+                    const std::vector<std::vector<double>>& B);
 
  private:
-  std::vector<double> A_;
-  std::vector<double> B_;
-  std::vector<double> C_;
-  size_t n;
-
-  std::vector<double> local_A;
-  std::vector<double> local_B;
-  std::vector<double> local_C;
-
-  std::vector<int> sizes_a;
-  std::vector<int> displs_a;
-  std::vector<int> sizes_b;
-  std::vector<int> displs_b;
-
+  std::vector<std::vector<double>> matrixA, matrixB, resultMatrix;
   boost::mpi::communicator world;
 
-  void strassen_multiply_parallel(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, size_t n);
-  static void calculate_distribution_a(int rows, int num_proc, std::vector<int>& sizes, std::vector<int>& displs);
-  static void calculate_distribution_b(int rows, int num_proc, std::vector<int>& sizes, std::vector<int>& displs);
+  std::vector<std::vector<double>> strassen_multiply(const std::vector<std::vector<double>>& A,
+                                                     const std::vector<std::vector<double>>& B);
+  static std::vector<std::vector<double>> add(const std::vector<std::vector<double>>& A,
+                                       const std::vector<std::vector<double>>& B);
+  static std::vector<std::vector<double>> subtract(const std::vector<std::vector<double>>& A,
+                                            const std::vector<std::vector<double>>& B);
+  static void split_matrix(const std::vector<std::vector<double>>& matrix,
+                    std::vector<std::vector<double>>& A11,
+                    std::vector<std::vector<double>>& A12,
+                    std::vector<std::vector<double>>& A21,
+                    std::vector<std::vector<double>>& A22);
+  static std::vector<std::vector<double>> merge_matrices(const std::vector<std::vector<double>>& C11,
+                                                  const std::vector<std::vector<double>>& C12,
+                                                  const std::vector<std::vector<double>>& C21,
+                                                  const std::vector<std::vector<double>>& C22);
+  gather_result(const std::vector<std::vector<double>>& localC,
+                std::vector<std::vector<double>>& globalC,
+                int rank, int num_processes);
+  split_matrix_for_processes(const std::vector<std::vector<double>>& matrix,
+                             std::vector<std::vector<double>>& localMatrix,
+                             int rank, int num_processes);
 };
 
-}  // namespace nasedkin_e_strassen_algorithm_mpi
+}  // namespace nasedkin_e_strassen_algorithm
