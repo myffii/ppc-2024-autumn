@@ -32,24 +32,29 @@ class StrassenAlgorithmMPI : public ppc::core::Task {
   std::vector<std::vector<double>> strassen_multiply(const std::vector<std::vector<double>>& A,
                                                      const std::vector<std::vector<double>>& B);
   static std::vector<std::vector<double>> add(const std::vector<std::vector<double>>& A,
-                                       const std::vector<std::vector<double>>& B);
+                                              const std::vector<std::vector<double>>& B);
   static std::vector<std::vector<double>> subtract(const std::vector<std::vector<double>>& A,
-                                            const std::vector<std::vector<double>>& B);
+                                                   const std::vector<std::vector<double>>& B);
   static void split_matrix(const std::vector<std::vector<double>>& matrix,
-                    std::vector<std::vector<double>>& A11,
-                    std::vector<std::vector<double>>& A12,
-                    std::vector<std::vector<double>>& A21,
-                    std::vector<std::vector<double>>& A22);
+                           std::vector<std::vector<double>>& A11,
+                           std::vector<std::vector<double>>& A12,
+                           std::vector<std::vector<double>>& A21,
+                           std::vector<std::vector<double>>& A22);
   static std::vector<std::vector<double>> merge_matrices(const std::vector<std::vector<double>>& C11,
-                                                  const std::vector<std::vector<double>>& C12,
-                                                  const std::vector<std::vector<double>>& C21,
-                                                  const std::vector<std::vector<double>>& C22);
+                                                         const std::vector<std::vector<double>>& C12,
+                                                         const std::vector<std::vector<double>>& C21,
+                                                         const std::vector<std::vector<double>>& C22);
+
   void gather_result(const std::vector<std::vector<double>>& localC,
-                std::vector<std::vector<double>>& globalC,
-                int rank, int num_processes);
+                     std::vector<std::vector<double>>& globalC,
+                     int rank, int num_processes);
   static void split_matrix_for_processes(const std::vector<std::vector<double>>& matrix,
-                             std::vector<std::vector<double>>& localMatrix,
-                             int rank, int num_processes);
+                                         std::vector<std::vector<double>>& localMatrix,
+                                         int rank, int num_processes);
+
+  // Добавьте объявления для функций выравнивания и восстановления матрицы
+  static std::vector<double> flatten_matrix(const std::vector<std::vector<double>>& matrix);
+  static std::vector<std::vector<double>> unflatten_matrix(const std::vector<double>& flattened, int rows, int cols);
 };
 
 }  // namespace nasedkin_e_strassen_algorithm

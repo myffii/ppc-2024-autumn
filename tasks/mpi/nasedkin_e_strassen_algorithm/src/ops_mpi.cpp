@@ -3,6 +3,7 @@
 #include <cmath>
 #include <iostream>
 #include <random>
+#include <boost/mpi.hpp>
 #include <boost/mpi/collectives.hpp>
 #include <boost/serialization/vector.hpp>
 
@@ -140,6 +141,26 @@ std::vector<std::vector<double>> StrassenAlgorithmMPI::strassen_multiply(const s
   return merge_matrices(C11, C12, C21, C22);
 }
 
+// Функция для выравнивания двумерного вектора в одномерный
+std::vector<double> flatten_matrix(const std::vector<std::vector<double>>& matrix) {
+  std::vector<double> flattened;
+  for (const auto& row : matrix) {
+    flattened.insert(flattened.end(), row.begin(), row.end());
+  }
+  return flattened;
+}
+
+// Функция для восстановления двумерного вектора из одномерного
+std::vector<std::vector<double>> unflatten_matrix(const std::vector<double>& flattened, int rows, int cols) {
+  std::vector<std::vector<double>> matrix(rows, std::vector<double>(cols));
+  for (int i = 0; i < rows; ++i) {
+    for (int j = 0; j < cols; ++j) {
+      matrix[i][j] = flattened[i * cols + j];
+    }
+  }
+  return matrix;
+}
+
 void StrassenAlgorithmMPI::gather_result(const std::vector<std::vector<double>>& localC,
                                          std::vector<std::vector<double>>& globalC,
                                          int rank, int num_processes) {
@@ -154,7 +175,17 @@ void StrassenAlgorithmMPI::gather_result(const std::vector<std::vector<double>>&
     displacements[i] = i * size_per_process;
   }
 
-  boost::mpi::gatherv(world, localC, globalC, counts, displacements, 0);
+  // Flatten localC to a 1D vector
+  std::vector<double> localC_flattened = flatten_matrix(localC);
+
+  // Gather flattened data
+  std::vector<double> globalC_flattened(n * n);
+  boost::mpi::gatherv(world, localC_flattened, globalC_flattened, counts, displacements, 0);
+
+  // Unflatten the gathered data back to a 2D vector
+  if (rank == 0) {
+    globalC = unflatten_matrix(globalC_flattened, n, n);
+  }
 }
 
 void StrassenAlgorithmMPI::split_matrix_for_processes(const std::vector<std::vector<double>>& matrix,
