@@ -1,17 +1,15 @@
 #include "mpi/nasedkin_e_strassen_algorithm/include/ops_mpi.hpp"
 
-#include <mpi.h>
-
-#include <algorithm>
-#include <boost/mpi.hpp>
+#include <boost/mpi/communicator.hpp>
+#include <boost/mpi/environment.hpp>
+#include <boost/mpi/collectives.hpp>
 #include <boost/serialization/vector.hpp>
 #include <cmath>
 #include <vector>
 
-#include "boost/mpi/collectives/broadcast.hpp"
-
 namespace nasedkin_e_strassen_algorithm_mpi {
 
+// Метод для последовательной версии алгоритма Штрассена
 bool StrassenAlgorithmMPISequential::pre_processing() {
   internal_order_test();
   n = *reinterpret_cast<size_t*>(taskData->inputs[0]);
@@ -99,18 +97,18 @@ std::vector<std::vector<double>> StrassenAlgorithmMPISequential::strassen(const 
   split(A, a, b, c, d);
   split(B, e, f, g, h);
 
-  std::vector<std::vector<double>> p1 = strassen(a, subtract(f, h));
-  std::vector<std::vector<double>> p2 = strassen(add(a, b), h);
-  std::vector<std::vector<double>> p3 = strassen(add(c, d), e);
-  std::vector<std::vector<double>> p4 = strassen(d, subtract(g, e));
-  std::vector<std::vector<double>> p5 = strassen(add(a, d), add(e, h));
-  std::vector<std::vector<double>> p6 = strassen(subtract(b, d), add(g, h));
-  std::vector<std::vector<double>> p7 = strassen(subtract(a, c), add(e, f));
+  std::vector<std::vector<double>> p1 = strassen(a, StrassenAlgorithmMPISequential::subtract(f, h));
+  std::vector<std::vector<double>> p2 = strassen(StrassenAlgorithmMPISequential::add(a, b), h);
+  std::vector<std::vector<double>> p3 = strassen(StrassenAlgorithmMPISequential::add(c, d), e);
+  std::vector<std::vector<double>> p4 = strassen(d, StrassenAlgorithmMPISequential::subtract(g, e));
+  std::vector<std::vector<double>> p5 = strassen(StrassenAlgorithmMPISequential::add(a, d), StrassenAlgorithmMPISequential::add(e, h));
+  std::vector<std::vector<double>> p6 = strassen(StrassenAlgorithmMPISequential::subtract(b, d), StrassenAlgorithmMPISequential::add(g, h));
+  std::vector<std::vector<double>> p7 = strassen(StrassenAlgorithmMPISequential::subtract(a, c), StrassenAlgorithmMPISequential::add(e, f));
 
-  std::vector<std::vector<double>> C11 = add(subtract(add(p5, p4), p2), p6);
-  std::vector<std::vector<double>> C12 = add(p1, p2);
-  std::vector<std::vector<double>> C21 = add(p3, p4);
-  std::vector<std::vector<double>> C22 = subtract(subtract(add(p5, p1), p3), p7);
+  std::vector<std::vector<double>> C11 = StrassenAlgorithmMPISequential::add(StrassenAlgorithmMPISequential::subtract(StrassenAlgorithmMPISequential::add(p5, p4), p2), p6);
+  std::vector<std::vector<double>> C12 = StrassenAlgorithmMPISequential::add(p1, p2);
+  std::vector<std::vector<double>> C21 = StrassenAlgorithmMPISequential::add(p3, p4);
+  std::vector<std::vector<double>> C22 = StrassenAlgorithmMPISequential::subtract(StrassenAlgorithmMPISequential::subtract(StrassenAlgorithmMPISequential::add(p5, p1), p3), p7);
 
   std::vector<std::vector<double>> C(n, std::vector<double>(n, 0.0));
   for (size_t i = 0; i < n / 2; ++i) {
@@ -169,6 +167,7 @@ std::vector<std::vector<double>> StrassenAlgorithmMPISequential::subtract(const 
   return C;
 }
 
+// Метод для параллельной версии алгоритма Штрассена
 bool StrassenAlgorithmMPIParallel::pre_processing() {
   internal_order_test();
   sizes_a.resize(world.size());

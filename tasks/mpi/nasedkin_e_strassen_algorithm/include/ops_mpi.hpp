@@ -30,6 +30,10 @@ class StrassenAlgorithmMPISequential : public ppc::core::Task {
   std::vector<std::vector<double>> brute_force(const std::vector<std::vector<double>>& A, const std::vector<std::vector<double>>& B);
   void split(const std::vector<std::vector<double>>& matrix, std::vector<std::vector<double>>& a, std::vector<std::vector<double>>& b, std::vector<std::vector<double>>& c, std::vector<std::vector<double>>& d);
   std::vector<std::vector<double>> strassen(const std::vector<std::vector<double>>& A, const std::vector<std::vector<double>>& B);
+  static std::vector<std::vector<double>> StrassenAlgorithmMPISequential::subtract(const std::vector<std::vector<double>>& A,
+                                                                            const std::vector<std::vector<double>>& B);
+  static std::vector<std::vector<double>> StrassenAlgorithmMPISequential::add(const std::vector<std::vector<double>>& A,
+                                                                       const std::vector<std::vector<double>>& B);
 };
 
 class StrassenAlgorithmMPIParallel : public ppc::core::Task {
@@ -60,6 +64,10 @@ class StrassenAlgorithmMPIParallel : public ppc::core::Task {
   std::vector<std::vector<double>> brute_force(const std::vector<std::vector<double>>& A, const std::vector<std::vector<double>>& B);
   void split(const std::vector<std::vector<double>>& matrix, std::vector<std::vector<double>>& a, std::vector<std::vector<double>>& b, std::vector<std::vector<double>>& c, std::vector<std::vector<double>>& d);
   std::vector<std::vector<double>> strassen(const std::vector<std::vector<double>>& A, const std::vector<std::vector<double>>& B);
+  static std::vector<std::vector<double>> StrassenAlgorithmMPISequential::subtract(const std::vector<std::vector<double>>& A,
+                                                                            const std::vector<std::vector<double>>& B);
+  static std::vector<std::vector<double>> StrassenAlgorithmMPISequential::add(const std::vector<std::vector<double>>& A,
+                                                                       const std::vector<std::vector<double>>& B);
 };
 
 }  // namespace nasedkin_e_strassen_algorithm_mpi
