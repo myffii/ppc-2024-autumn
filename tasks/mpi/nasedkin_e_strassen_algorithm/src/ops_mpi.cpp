@@ -27,7 +27,34 @@ void StrassenAlgorithmMPI::set_matrices(const std::vector<std::vector<double>>& 
 }
 
 bool StrassenAlgorithmMPI::pre_processing() {
-  return !matrixA.empty() && !matrixB.empty() && matrixA.size() == matrixB.size();
+  int n = matrixA.size();
+  int rows_per_process = n / world.size();
+  int start_row = world.rank() * rows_per_process;
+  int end_row = (world.rank() == world.size() - 1) ? n : start_row + rows_per_process;
+
+  // Разделяем матрицы по строкам между процессами
+  std::vector<int> sendcounts(world.size(), rows_per_process * n);
+  std::vector<int> displs(world.size(), 0);
+  for (int i = 0; i < world.size(); ++i) {
+    displs[i] = i * rows_per_process * n;
+  }
+  sendcounts[world.size() - 1] = (n - (world.size() - 1) * rows_per_process) * n;
+
+  std::vector<double> local_matrixA(sendcounts[world.rank()]);
+  std::vector<double> local_matrixB(sendcounts[world.rank()]);
+
+  boost::mpi::scatterv(world, matrixA.data(), sendcounts, displs, local_matrixA.data(), 0);
+  boost::mpi::scatterv(world, matrixB.data(), sendcounts, displs, local_matrixB.data(), 0);
+
+  // Преобразуем локальные данные обратно в матрицы
+  matrixA.clear();
+  matrixB.clear();
+  for (int i = 0; i < end_row - start_row; ++i) {
+    matrixA.emplace_back(local_matrixA.begin() + i * n, local_matrixA.begin() + (i + 1) * n);
+    matrixB.emplace_back(local_matrixB.begin() + i * n, local_matrixB.begin() + (i + 1) * n);
+  }
+
+  return true;
 }
 
 bool StrassenAlgorithmMPI::validation() {
@@ -35,44 +62,46 @@ bool StrassenAlgorithmMPI::validation() {
 }
 
 bool StrassenAlgorithmMPI::run() {
-  int rank = world.rank();
-  int size = world.size();
+  int n = matrixA.size();
+  resultMatrix = strassen_multiply(matrixA, matrixB);
 
-  int n = matrixA.size(); // Размер матрицы
-  if (n % size != 0) {
-    return false;
+  // Собираем результаты от всех процессов
+  std::vector<double> local_result(resultMatrix.size() * n);
+  for (int i = 0; i < resultMatrix.size(); ++i) {
+    std::copy(resultMatrix[i].begin(), resultMatrix[i].end(), local_result.begin() + i * n);
   }
 
-  int rows_per_process = n / size;
+  std::vector<int> recvcounts(world.size(), resultMatrix.size() * n);
+  std::vector<int> displs(world.size(), 0);
+  for (int i = 0; i < world.size(); ++i) {
+    displs[i] = i * resultMatrix.size() * n;
+  }
 
-  // Матрица для хранения локального результата
-  std::vector<std::vector<double>> local_result(rows_per_process, std::vector<double>(n));
+  std::vector<double> global_result(n * n);
+  boost::mpi::gatherv(world, local_result.data(), local_result.size(), global_result.data(), recvcounts, displs, 0);
 
-  // Распределение строк матрицы A между процессами
-  std::vector<std::vector<double>> local_A(rows_per_process, std::vector<double>(n));
-  boost::mpi::scatter(world, matrixA, local_A, 0);
-
-  // Передача матрицы B всем процессам
-  boost::mpi::broadcast(world, matrixB, 0);
-
-  // Локальное умножение строк local_A на B
-  for (int i = 0; i < rows_per_process; ++i) {
-    for (int j = 0; j < n; ++j) {
-      local_result[i][j] = 0.0;
-      for (int k = 0; k < n; ++k) {
-        local_result[i][j] += local_A[i][k] * matrixB[k][j];
-      }
+  if (world.rank() == 0) {
+    resultMatrix.clear();
+    for (int i = 0; i < n; ++i) {
+      resultMatrix.emplace_back(global_result.begin() + i * n, global_result.begin() + (i + 1) * n);
     }
   }
-
-  // Сбор всех результатов
-  boost::mpi::gather(world, local_result, resultMatrix, 0);
 
   return true;
 }
 
-
-bool StrassenAlgorithmMPI::post_processing() { return true; }
+bool StrassenAlgorithmMPI::post_processing() {
+  if (world.rank() == 0) {
+    std::cout << "Resulting Matrix:\n";
+    for (const auto& row : resultMatrix) {
+      for (auto elem : row) {
+        std::cout << elem << " ";
+      }
+      std::cout << "\n";
+    }
+  }
+  return true;
+}
 
 std::vector<std::vector<double>> StrassenAlgorithmMPI::add(const std::vector<std::vector<double>>& A,
                                                            const std::vector<std::vector<double>>& B) {
