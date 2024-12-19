@@ -61,7 +61,7 @@ bool StrassenAlgorithmMPI::run() {
 
   std::vector<std::vector<double>> resultMatrix;
   if (rank == 0) {
-    resultMatrix.resize(n, std::vector<double>(n));
+    resultMatrix.resize(size);
   }
 
   boost::mpi::gather(world, local_result, resultMatrix, 0);
