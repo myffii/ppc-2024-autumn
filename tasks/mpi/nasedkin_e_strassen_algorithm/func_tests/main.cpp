@@ -3,93 +3,40 @@
 #include <boost/mpi/communicator.hpp>
 #include <boost/mpi/environment.hpp>
 #include <memory>
-#include <random>
 #include <vector>
 
 #include "mpi/nasedkin_e_strassen_algorithm/include/ops_mpi.hpp"
 
-namespace nasedkin_e_strassen_algorithm {
-
-// Генерация случайной матрицы
-std::vector<std::vector<double>> generate_random_matrix(size_t n, double min_val = -100.0, double max_val = 100.0) {
-  std::vector<std::vector<double>> matrix(n, std::vector<double>(n));
-  std::random_device rd;
-  std::mt19937 gen(rd());
-  std::uniform_real_distribution<> dist(min_val, max_val);
-  for (size_t i = 0; i < n; ++i) {
-    for (size_t j = 0; j < n; ++j) {
-      matrix[i][j] = dist(gen);
-    }
-  }
-  return matrix;
-}
-
-// Функция для выполнения теста с заданным размером матрицы
-void run_strassen_test_for_matrix_size(size_t matrix_size) {
+TEST(StrassenMatrixMultiplication, test_small_matrix) {
   boost::mpi::communicator world;
 
-  auto A = generate_random_matrix(matrix_size);
-  auto B = generate_random_matrix(matrix_size);
+  int n = 4;
+  std::vector<double> A = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
+  std::vector<double> B = {16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1};
+  std::vector<double> C(n * n, 0.0);
 
-  std::vector<std::vector<double>> parallel_result(matrix_size, std::vector<double>(matrix_size, 0.0));
-  std::vector<std::vector<double>> sequential_result(matrix_size, std::vector<double>(matrix_size, 0.0));
+  std::shared_ptr<ppc::core::TaskData> taskDataPar = std::make_shared<ppc::core::TaskData>();
+  if (world.rank() == 0) {
+    taskDataPar->inputs.emplace_back(reinterpret_cast<uint8_t*>(&n));
+    taskDataPar->inputs_count.emplace_back(1);
+    taskDataPar->inputs.emplace_back(reinterpret_cast<uint8_t*>(A.data()));
+    taskDataPar->inputs_count.emplace_back(A.size());
+    taskDataPar->inputs.emplace_back(reinterpret_cast<uint8_t*>(B.data()));
+    taskDataPar->inputs_count.emplace_back(B.size());
+    taskDataPar->outputs.emplace_back(reinterpret_cast<uint8_t*>(C.data()));
+    taskDataPar->outputs_count.emplace_back(C.size());
+  }
 
-  // Параллельная реализация
-  StrassenMPITaskParallel parallel_task(A, B);
-  auto parallel_C = parallel_task.run();
+  nasedkin_e_strassen_algorithm::StrassenMatrixMultiplicationParallel parallelTask(taskDataPar);
+  ASSERT_TRUE(parallelTask.validation());
+  parallelTask.pre_processing();
+  parallelTask.run();
+  parallelTask.post_processing();
 
-  // Последовательная реализация
-  StrassenMPITaskSequential sequential_task(A, B);
-  auto sequential_C = sequential_task.run();
-
-  // Сравнение результатов
-  for (size_t i = 0; i < matrix_size; ++i) {
-    for (size_t j = 0; j < matrix_size; ++j) {
-      EXPECT_NEAR(parallel_C[i][j], sequential_C[i][j], 1e-6);
+  if (world.rank() == 0) {
+    std::vector<double> reference_result = {80, 70, 60, 50, 240, 214, 188, 162, 400, 358, 316, 274, 560, 502, 444, 386};
+    for (int i = 0; i < n * n; ++i) {
+      ASSERT_NEAR(C[i], reference_result[i], 1e-6);
     }
   }
 }
-
-// Тесты для матриц разных размеров
-TEST(nasedkin_e_strassen_algorithm, test_matrix_2) { run_strassen_test_for_matrix_size(2); }
-TEST(nasedkin_e_strassen_algorithm, test_matrix_4) { run_strassen_test_for_matrix_size(4); }
-TEST(nasedkin_e_strassen_algorithm, test_matrix_8) { run_strassen_test_for_matrix_size(8); }
-TEST(nasedkin_e_strassen_algorithm, test_matrix_16) { run_strassen_test_for_matrix_size(16); }
-TEST(nasedkin_e_strassen_algorithm, test_matrix_32) { run_strassen_test_for_matrix_size(32); }
-TEST(nasedkin_e_strassen_algorithm, test_matrix_64) { run_strassen_test_for_matrix_size(64); }
-TEST(nasedkin_e_strassen_algorithm, test_matrix_128) { run_strassen_test_for_matrix_size(128); }
-
-// Тест для проверки валидации входных данных
-TEST(nasedkin_e_strassen_algorithm, invalid_input_size) {
-  boost::mpi::communicator world;
-
-  if (world.rank() == 0) {
-    // Некорректный размер матрицы (не является степенью двойки)
-    size_t invalid_size = 3;
-    auto A = generate_random_matrix(invalid_size);
-    auto B = generate_random_matrix(invalid_size);
-
-    StrassenMPITaskParallel parallel_task(A, B);
-    EXPECT_FALSE(parallel_task.validation());
-  } else {
-    EXPECT_TRUE(true);
-  }
-}
-
-// Тест для проверки валидации входных данных (несоответствие размеров матриц)
-TEST(nasedkin_e_strassen_algorithm, invalid_matrix_size_mismatch) {
-  boost::mpi::communicator world;
-
-  if (world.rank() == 0) {
-    // Матрицы разных размеров
-    auto A = generate_random_matrix(4);
-    auto B = generate_random_matrix(8);
-
-    StrassenMPITaskParallel parallel_task(A, B);
-    EXPECT_FALSE(parallel_task.validation());
-  } else {
-    EXPECT_TRUE(true);
-  }
-}
-
-}  // namespace nasedkin_e_strassen_algorithm

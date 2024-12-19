@@ -1,162 +1,240 @@
 #include "mpi/nasedkin_e_strassen_algorithm/include/ops_mpi.hpp"
-#include <boost/mpi/environment.hpp>
-#include <boost/mpi/communicator.hpp>
-#include <boost/mpi/collectives.hpp>
+
+#include <boost/mpi.hpp>
 #include <boost/serialization/vector.hpp>
 #include <vector>
-#include <algorithm>
-#include <iostream>
 
 namespace nasedkin_e_strassen_algorithm {
 
-StrassenMPITaskParallel::StrassenMPITaskParallel(std::vector<std::vector<double>>& A, std::vector<std::vector<double>>& B)
-    : A_(A), B_(B) {}
+bool StrassenMatrixMultiplicationSequential::pre_processing() {
+  internal_order_test();
 
-std::vector<std::vector<double>> StrassenMPITaskParallel::run() {
-  return strassen_parallel(A_, B_);
+  n_ = *reinterpret_cast<int*>(taskData->inputs[0]);
+  A_.assign(reinterpret_cast<double*>(taskData->inputs[1]), reinterpret_cast<double*>(taskData->inputs[1]) + n_ * n_);
+  B_.assign(reinterpret_cast<double*>(taskData->inputs[2]), reinterpret_cast<double*>(taskData->inputs[2]) + n_ * n_);
+
+  return true;
 }
 
-std::vector<std::vector<double>> StrassenMPITaskParallel::strassen_parallel(const std::vector<std::vector<double>>& A, const std::vector<std::vector<double>>& B) {
-  int n = A.size();
+bool StrassenMatrixMultiplicationSequential::validation() {
+  internal_order_test();
+  return taskData->outputs_count[0] == n_ * n_;
+}
+
+bool StrassenMatrixMultiplicationSequential::run() {
+  internal_order_test();
+  C_ = strassen(A_, B_, n_);
+  return true;
+}
+
+bool StrassenMatrixMultiplicationSequential::post_processing() {
+  internal_order_test();
+  std::copy(C_.begin(), C_.end(), reinterpret_cast<double*>(taskData->outputs[0]));
+  return true;
+}
+
+std::vector<double> StrassenMatrixMultiplicationSequential::strassen(const std::vector<double>& A, const std::vector<double>& B, int n) {
   if (n <= 2) {
-    return brute_force(A, B);
-  }
-
-  // Разделение матриц на подматрицы
-  auto a = split(A, 0, 0, n / 2);
-  auto b = split(A, 0, n / 2, n / 2);
-  auto c = split(A, n / 2, 0, n / 2);
-  auto d = split(A, n / 2, n / 2, n / 2);
-
-  auto e = split(B, 0, 0, n / 2);
-  auto f = split(B, 0, n / 2, n / 2);
-  auto g = split(B, n / 2, 0, n / 2);
-  auto h = split(B, n / 2, n / 2, n / 2);
-
-  // Распределение задач между процессами
-  std::vector<std::vector<double>> p1, p2, p3, p4, p5, p6, p7;
-
-  if (world.rank() == 0) {
-    // Распределение задач между процессами
-    std::vector<boost::mpi::request> requests;
-
-    requests.push_back(world.isend(1, 0, add(a, d)));
-    requests.push_back(world.isend(1, 1, add(e, h)));
-
-    requests.push_back(world.isend(2, 0, add(c, d)));
-    requests.push_back(world.isend(2, 1, e));
-
-    requests.push_back(world.isend(3, 0, a));
-    requests.push_back(world.isend(3, 1, subtract(f, h)));
-
-    requests.push_back(world.isend(4, 0, d));
-    requests.push_back(world.isend(4, 1, subtract(g, e)));
-
-    requests.push_back(world.isend(5, 0, add(a, b)));
-    requests.push_back(world.isend(5, 1, h));
-
-    requests.push_back(world.isend(6, 0, subtract(b, d)));
-    requests.push_back(world.isend(6, 1, add(g, h)));
-
-    requests.push_back(world.isend(7, 0, subtract(a, c)));
-    requests.push_back(world.isend(7, 1, add(e, f)));
-
-    // Ожидание завершения отправки данных
-    boost::mpi::wait_all(requests.begin(), requests.end());
-
-    // Получение результатов от других процессов
-    world.recv(1, 2, p1);
-    world.recv(2, 2, p2);
-    world.recv(3, 2, p3);
-    world.recv(4, 2, p4);
-    world.recv(5, 2, p5);
-    world.recv(6, 2, p6);
-    world.recv(7, 2, p7);
-  } else {
-    // Получение данных от процесса 0
-    std::vector<std::vector<double>> local_A, local_B;
-    world.recv(0, world.rank() - 1, local_A);
-    world.recv(0, world.rank(), local_B);
-
-    // Выполнение вычислений
-    auto local_result = strassen_parallel(local_A, local_B);
-
-    // Отправка результата обратно процессу 0
-    world.send(0, 2, local_result);
-  }
-
-  // Сборка результата на процессе 0
-  if (world.rank() == 0) {
-    auto C11 = add(subtract(add(p1, p4), p5), p7);
-    auto C12 = add(p3, p5);
-    auto C21 = add(p2, p4);
-    auto C22 = add(subtract(add(p1, p3), p2), p6);
-
-    return combine(C11, C12, C21, C22);
-  } else {
-    return {}; // Возвращаем пустую матрицу для других процессов
-  }
-}
-
-std::vector<std::vector<double>> StrassenMPITaskParallel::brute_force(const std::vector<std::vector<double>>& A, const std::vector<std::vector<double>>& B) {
-  int n = A.size();
-  int m = A[0].size();
-  int p = B[0].size();
-  std::vector<std::vector<double>> C(n, std::vector<double>(p, 0.0));
-  for (int i = 0; i < n; i++) {
-    for (int j = 0; j < p; j++) {
-      for (int k = 0; k < m; k++) {
-        C[i][j] += A[i][k] * B[k][j];
+    std::vector<double> C(n * n, 0.0);
+    for (int i = 0; i < n; ++i) {
+      for (int j = 0; j < n; ++j) {
+        for (int k = 0; k < n; ++k) {
+          C[i * n + j] += A[i * n + k] * B[k * n + j];
+        }
       }
     }
+    return C;
+  }
+
+  int half = n / 2;
+  std::vector<double> A11(half * half), A12(half * half), A21(half * half), A22(half * half);
+  std::vector<double> B11(half * half), B12(half * half), B21(half * half), B22(half * half);
+
+  for (int i = 0; i < half; ++i) {
+    for (int j = 0; j < half; ++j) {
+      A11[i * half + j] = A[i * n + j];
+      A12[i * half + j] = A[i * n + j + half];
+      A21[i * half + j] = A[(i + half) * n + j];
+      A22[i * half + j] = A[(i + half) * n + j + half];
+
+      B11[i * half + j] = B[i * n + j];
+      B12[i * half + j] = B[i * n + j + half];
+      B21[i * half + j] = B[(i + half) * n + j];
+      B22[i * half + j] = B[(i + half) * n + j + half];
+    }
+  }
+
+  auto P1 = strassen(add(A11, A22, half), add(B11, B22, half), half);
+  auto P2 = strassen(add(A21, A22, half), B11, half);
+  auto P3 = strassen(A11, subtract(B12, B22, half), half);
+  auto P4 = strassen(A22, subtract(B21, B11, half), half);
+  auto P5 = strassen(add(A11, A12, half), B22, half);
+  auto P6 = strassen(subtract(A21, A11, half), add(B11, B12, half), half);
+  auto P7 = strassen(subtract(A12, A22, half), add(B21, B22, half), half);
+
+  auto C11 = add(subtract(add(P1, P4, half), P5, half), P7, half);
+  auto C12 = add(P3, P5, half);
+  auto C21 = add(P2, P4, half);
+  auto C22 = add(subtract(add(P1, P3, half), P2, half), P6, half);
+
+  std::vector<double> C(n * n, 0.0);
+  for (int i = 0; i < half; ++i) {
+    for (int j = 0; j < half; ++j) {
+      C[i * n + j] = C11[i * half + j];
+      C[i * n + j + half] = C12[i * half + j];
+      C[(i + half) * n + j] = C21[i * half + j];
+      C[(i + half) * n + j + half] = C22[i * half + j];
+    }
+  }
+
+  return C;
+}
+
+std::vector<double> StrassenMatrixMultiplicationSequential::add(const std::vector<double>& A, const std::vector<double>& B, int n) {
+  std::vector<double> C(n * n);
+  for (int i = 0; i < n * n; ++i) {
+    C[i] = A[i] + B[i];
   }
   return C;
 }
 
-std::vector<std::vector<double>> StrassenMPITaskParallel::add(const std::vector<std::vector<double>>& A, const std::vector<std::vector<double>>& B) {
-  int n = A.size();
-  std::vector<std::vector<double>> C(n, std::vector<double>(n, 0.0));
-  for (int i = 0; i < n; i++) {
-    for (int j = 0; j < n; j++) {
-      C[i][j] = A[i][j] + B[i][j];
-    }
+std::vector<double> StrassenMatrixMultiplicationSequential::subtract(const std::vector<double>& A, const std::vector<double>& B, int n) {
+  std::vector<double> C(n * n);
+  for (int i = 0; i < n * n; ++i) {
+    C[i] = A[i] - B[i];
   }
   return C;
 }
 
-std::vector<std::vector<double>> StrassenMPITaskParallel::subtract(const std::vector<std::vector<double>>& A, const std::vector<std::vector<double>>& B) {
-  int n = A.size();
-  std::vector<std::vector<double>> C(n, std::vector<double>(n, 0.0));
-  for (int i = 0; i < n; i++) {
-    for (int j = 0; j < n; j++) {
-      C[i][j] = A[i][j] - B[i][j];
+bool StrassenMatrixMultiplicationParallel::pre_processing() {
+  internal_order_test();
+
+  if (world.rank() == 0) {
+    n_ = *reinterpret_cast<int*>(taskData->inputs[0]);
+    A_.assign(reinterpret_cast<double*>(taskData->inputs[1]), reinterpret_cast<double*>(taskData->inputs[1]) + n_ * n_);
+    B_.assign(reinterpret_cast<double*>(taskData->inputs[2]), reinterpret_cast<double*>(taskData->inputs[2]) + n_ * n_);
+  }
+
+  boost::mpi::broadcast(world, n_, 0);
+  boost::mpi::broadcast(world, A_, 0);
+  boost::mpi::broadcast(world, B_, 0);
+
+  return true;
+}
+
+bool StrassenMatrixMultiplicationParallel::validation() {
+  internal_order_test();
+  if (world.rank() == 0) {
+    return taskData->outputs_count[0] == n_ * n_;
+  }
+  return true;
+}
+
+bool StrassenMatrixMultiplicationParallel::run() {
+  internal_order_test();
+  C_ = parallel_strassen(A_, B_, n_);
+  return true;
+}
+
+bool StrassenMatrixMultiplicationParallel::post_processing() {
+  internal_order_test();
+  if (world.rank() == 0) {
+    std::copy(C_.begin(), C_.end(), reinterpret_cast<double*>(taskData->outputs[0]));
+  }
+  return true;
+}
+
+std::vector<double> StrassenMatrixMultiplicationParallel::parallel_strassen(const std::vector<double>& A, const std::vector<double>& B, int n) {
+  if (n <= 2) {
+    return strassen(A, B, n);
+  }
+
+  int half = n / 2;
+  std::vector<double> A11(half * half), A12(half * half), A21(half * half), A22(half * half);
+  std::vector<double> B11(half * half), B12(half * half), B21(half * half), B22(half * half);
+
+  for (int i = 0; i < half; ++i) {
+    for (int j = 0; j < half; ++j) {
+      A11[i * half + j] = A[i * n + j];
+      A12[i * half + j] = A[i * n + j + half];
+      A21[i * half + j] = A[(i + half) * n + j];
+      A22[i * half + j] = A[(i + half) * n + j + half];
+
+      B11[i * half + j] = B[i * n + j];
+      B12[i * half + j] = B[i * n + j + half];
+      B21[i * half + j] = B[(i + half) * n + j];
+      B22[i * half + j] = B[(i + half) * n + j + half];
     }
+  }
+
+  std::vector<double> P1, P2, P3, P4, P5, P6, P7;
+
+  if (world.size() >= 7) {
+    std::vector<boost::mpi::request> requests;
+    requests.push_back(world.isend(1, 0, add(A11, A22, half)));
+    requests.push_back(world.isend(2, 0, add(B11, B22, half)));
+    requests.push_back(world.isend(3, 0, add(A21, A22, half)));
+    requests.push_back(world.isend(4, 0, B11));
+    requests.push_back(world.isend(5, 0, A11));
+    requests.push_back(world.isend(6, 0, subtract(B12, B22, half)));
+    requests.push_back(world.isend(7, 0, A22));
+    requests.push_back(world.isend(8, 0, subtract(B21, B11, half)));
+    requests.push_back(world.isend(9, 0, add(A11, A12, half)));
+    requests.push_back(world.isend(10, 0, B22));
+    requests.push_back(world.isend(11, 0, subtract(A21, A11, half)));
+    requests.push_back(world.isend(12, 0, add(B11, B12, half)));
+    requests.push_back(world.isend(13, 0, subtract(A12, A22, half)));
+    requests.push_back(world.isend(14, 0, add(B21, B22, half)));
+
+    P1 = world.recv<std::vector<double>>(1, 1);
+    P2 = world.recv<std::vector<double>>(2, 1);
+    P3 = world.recv<std::vector<double>>(3, 1);
+    P4 = world.recv<std::vector<double>>(4, 1);
+    P5 = world.recv<std::vector<double>>(5, 1);
+    P6 = world.recv<std::vector<double>>(6, 1);
+    P7 = world.recv<std::vector<double>>(7, 1);
+  } else {
+    P1 = strassen(add(A11, A22, half), add(B11, B22, half), half);
+    P2 = strassen(add(A21, A22, half), B11, half);
+    P3 = strassen(A11, subtract(B12, B22, half), half);
+    P4 = strassen(A22, subtract(B21, B11, half), half);
+    P5 = strassen(add(A11, A12, half), B22, half);
+    P6 = strassen(subtract(A21, A11, half), add(B11, B12, half), half);
+    P7 = strassen(subtract(A12, A22, half), add(B21, B22, half), half);
+  }
+
+  auto C11 = add(subtract(add(P1, P4, half), P5, half), P7, half);
+  auto C12 = add(P3, P5, half);
+  auto C21 = add(P2, P4, half);
+  auto C22 = add(subtract(add(P1, P3, half), P2, half), P6, half);
+
+  std::vector<double> C(n * n, 0.0);
+  for (int i = 0; i < half; ++i) {
+    for (int j = 0; j < half; ++j) {
+      C[i * n + j] = C11[i * half + j];
+      C[i * n + j + half] = C12[i * half + j];
+      C[(i + half) * n + j] = C21[i * half + j];
+      C[(i + half) * n + j + half] = C22[i * half + j];
+    }
+  }
+
+  return C;
+}
+
+std::vector<double> StrassenMatrixMultiplicationParallel::add(const std::vector<double>& A, const std::vector<double>& B, int n) {
+  std::vector<double> C(n * n);
+  for (int i = 0; i < n * n; ++i) {
+    C[i] = A[i] + B[i];
   }
   return C;
 }
 
-std::vector<std::vector<double>> StrassenMPITaskParallel::combine(const std::vector<std::vector<double>>& C11, const std::vector<std::vector<double>>& C12, const std::vector<std::vector<double>>& C21, const std::vector<std::vector<double>>& C22) {
-  int n = C11.size();
-  std::vector<std::vector<double>> C(2 * n, std::vector<double>(2 * n, 0.0));
-  for (int i = 0; i < n; i++) {
-    for (int j = 0; j < n; j++) {
-      C[i][j] = C11[i][j];
-      C[i][j + n] = C12[i][j];
-      C[i + n][j] = C21[i][j];
-      C[i + n][j + n] = C22[i][j];
-    }
+std::vector<double> StrassenMatrixMultiplicationParallel::subtract(const std::vector<double>& A, const std::vector<double>& B, int n) {
+  std::vector<double> C(n * n);
+  for (int i = 0; i < n * n; ++i) {
+    C[i] = A[i] - B[i];
   }
   return C;
-}
-
-std::vector<std::vector<double>> StrassenMPITaskParallel::split(const std::vector<std::vector<double>>& matrix, int row_start, int col_start, int size) {
-  std::vector<std::vector<double>> result(size, std::vector<double>(size, 0.0));
-  for (int i = 0; i < size; i++) {
-    for (int j = 0; j < size; j++) {
-      result[i][j] = matrix[row_start + i][col_start + j];
-    }
-  }
-  return result;
 }
 
 }  // namespace nasedkin_e_strassen_algorithm
