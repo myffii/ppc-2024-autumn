@@ -1,86 +1,57 @@
 #include <gtest/gtest.h>
-#include <boost/mpi.hpp>
-#include <boost/mpi/collectives.hpp>
+
 #include <boost/mpi/timer.hpp>
-#include "mpi/nasedkin_e_strassen_algorithm/include/vector_serialization.hpp"
-#include "mpi/nasedkin_e_strassen_algorithm/include/ops_mpi.hpp"
+
 #include "core/perf/include/perf.hpp"
+#include "mpi/nasedkin_e_strassen_algorithm/include/ops_mpi.hpp"
+#include "mpi/nasedkin_e_strassen_algorithm/src/ops_mpi.cpp"
 
-TEST(nasedkin_e_strassen_algorithm_mpi, perf_task_run) {
-  boost::mpi::environment env;
-  boost::mpi::communicator world;
+TEST(nasedkin_e_strassen_algorithm_mpi, test_pipeline_run) {
+    auto taskData = std::make_shared<ppc::core::TaskData>();
+    taskData->inputs_count.push_back(8);
 
-  int matrix_size = 8;
+    auto strassenTask = std::make_shared<nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI>(taskData);
 
-  auto taskData = std::make_shared<ppc::core::TaskData>();
-  taskData->inputs_count.push_back(matrix_size);
+    ASSERT_TRUE(strassenTask->validation()) << "Validation failed for valid input";
 
-  auto strassenTask = std::make_shared<nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI>(taskData);
+    strassenTask->pre_processing();
+    strassenTask->run();
+    strassenTask->post_processing();
 
-  std::vector<std::vector<double>> matrixA, matrixB;
-  if (world.rank() == 0) {
-    nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI::generate_random_matrix(matrix_size, matrixA);
-    nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI::generate_random_matrix(matrix_size, matrixB);
-  }
+    auto perfAttr = std::make_shared<ppc::core::PerfAttr>();
+    perfAttr->num_running = 10;
+    const boost::mpi::timer current_timer;
+    perfAttr->current_timer = [&] { return current_timer.elapsed(); };
 
-  boost::mpi::broadcast(world, matrixA, 0);
-  boost::mpi::broadcast(world, matrixB, 0);
+    auto perfResults = std::make_shared<ppc::core::PerfResults>();
 
-  strassenTask->set_matrices(matrixA, matrixB);
+    auto perfAnalyzer = std::make_shared<ppc::core::Perf>(strassenTask);
+    perfAnalyzer->pipeline_run(perfAttr, perfResults);
 
-  ASSERT_TRUE(strassenTask->validation()) << "Validation failed for valid input";
-
-  auto perfAttr = std::make_shared<ppc::core::PerfAttr>();
-  perfAttr->num_running = 10;
-  boost::mpi::timer timer;
-  perfAttr->current_timer = [&] { return timer.elapsed(); };
-
-  auto perfResults = std::make_shared<ppc::core::PerfResults>();
-
-  auto perfAnalyzer = std::make_shared<ppc::core::Perf>(strassenTask);
-
-  perfAnalyzer->task_run(perfAttr, perfResults);
-
-  if (world.rank() == 0) {
     ppc::core::Perf::print_perf_statistic(perfResults);
-  }
 }
 
-TEST(nasedkin_e_strassen_algorithm_mpi, perf_pipeline_run) {
-  boost::mpi::environment env;
-  boost::mpi::communicator world;
+TEST(nasedkin_e_strassen_algorithm_mpi, test_task_run) {
+    auto taskData = std::make_shared<ppc::core::TaskData>();
+    taskData->inputs_count.push_back(8);
 
-  int matrix_size = 8;
-  auto taskData = std::make_shared<ppc::core::TaskData>();
-  taskData->inputs_count.push_back(matrix_size);
+    auto strassenTask = std::make_shared<nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI>(taskData);
 
-  auto strassenTask = std::make_shared<nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI>(taskData);
+    ASSERT_TRUE(strassenTask->validation()) << "Validation failed for valid input";
 
-  std::vector<std::vector<double>> matrixA, matrixB;
-  if (world.rank() == 0) {
-    nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI::generate_random_matrix(matrix_size, matrixA);
-    nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI::generate_random_matrix(matrix_size, matrixB);
-  }
+    strassenTask->pre_processing();
+    strassenTask->run();
+    strassenTask->post_processing();
 
-  boost::mpi::broadcast(world, matrixA, 0);
-  boost::mpi::broadcast(world, matrixB, 0);
+    auto perfAttr = std::make_shared<ppc::core::PerfAttr>();
+    perfAttr->num_running = 10;
+    const boost::mpi::timer current_timer;
+    perfAttr->current_timer = [&] { return current_timer.elapsed(); };
 
-  strassenTask->set_matrices(matrixA, matrixB);
+    auto perfResults = std::make_shared<ppc::core::PerfResults>();
 
-  ASSERT_TRUE(strassenTask->validation()) << "Validation failed for valid input";
+    auto perfAnalyzer = std::make_shared<ppc::core::Perf>(strassenTask);
+    perfAnalyzer->task_run(perfAttr, perfResults);
 
-  auto perfAttr = std::make_shared<ppc::core::PerfAttr>();
-  perfAttr->num_running = 10;
-  boost::mpi::timer timer;
-  perfAttr->current_timer = [&] { return timer.elapsed(); };
-
-  auto perfResults = std::make_shared<ppc::core::PerfResults>();
-
-  auto perfAnalyzer = std::make_shared<ppc::core::Perf>(strassenTask);
-
-  perfAnalyzer->pipeline_run(perfAttr, perfResults);
-
-  if (world.rank() == 0) {
     ppc::core::Perf::print_perf_statistic(perfResults);
-  }
 }

@@ -1,8 +1,9 @@
 #include <gtest/gtest.h>
-#include <boost/mpi.hpp>
-#include <vector>
+
 #include "mpi/nasedkin_e_strassen_algorithm/include/ops_mpi.hpp"
-#include "mpi/nasedkin_e_strassen_algorithm/include/vector_serialization.hpp"
+#include "mpi/nasedkin_e_strassen_algorithm/src/ops_mpi.cpp"
+#include <boost/serialization/vector.hpp>
+
 TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_mpi_4x4) {
   boost::mpi::environment env;
   boost::mpi::communicator world;
