@@ -8,7 +8,7 @@
 
 namespace nasedkin_e_strassen_algorithm {
 
-class StrassenMPITaskSequential {
+class StrassenMPITaskSequential : public ppc::core::Task {
  public:
   explicit StrassenMPITaskSequential(std::vector<std::vector<double>>& A, std::vector<std::vector<double>>& B);
   std::vector<std::vector<double>> run();
@@ -27,7 +27,7 @@ class StrassenMPITaskSequential {
   std::vector<std::vector<double>> split(const std::vector<std::vector<double>>& matrix, int row_start, int col_start, int size);
 };
 
-class StrassenMPITaskParallel {
+class StrassenMPITaskParallel : public ppc::core::Task {
  public:
   explicit StrassenMPITaskParallel(std::vector<std::vector<double>>& A, std::vector<std::vector<double>>& B);
   std::vector<std::vector<double>> run();
