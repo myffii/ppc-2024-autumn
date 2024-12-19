@@ -26,9 +26,9 @@ class StrassenAlgorithmSequential : public ppc::core::Task {
   std::vector<double> C_;
   size_t n;
 
-  void strassen(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, size_t n);
-  void add(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, size_t n);
-  void subtract(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, size_t n);
+  static void strassen(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, size_t n);
+  static void add(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, size_t n);
+  static void subtract(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, size_t n);
 };
 
 class StrassenAlgorithmParallel : public ppc::core::Task {
@@ -51,15 +51,13 @@ class StrassenAlgorithmParallel : public ppc::core::Task {
 
   std::vector<int> sizes_a;
   std::vector<int> displs_a;
-  std::vector<int> sizes_b;
-  std::vector<int> displs_b;
 
   boost::mpi::communicator world;
 
-  void strassen(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, size_t n);
-  void add(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, size_t n);
-  void subtract(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, size_t n);
-  void calculate_distribution(int rows, int num_proc, std::vector<int>& sizes, std::vector<int>& displs);
+  static void strassen(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, size_t n);
+  static void add(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, size_t n);
+  static void subtract(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, size_t n);
+  static void calculate_distribution(int rows, int num_proc, std::vector<int>& sizes, std::vector<int>& displs);
 };
 
 }  // namespace nasedkin_e_strassen_algorithm_mpi

@@ -25,11 +25,27 @@ void StrassenAlgorithmSequential::strassen(const std::vector<double>& A, const s
   }
 
   size_t new_n = n / 2;
-  std::vector<double> A11(new_n * new_n), A12(new_n * new_n), A21(new_n * new_n), A22(new_n * new_n);
-  std::vector<double> B11(new_n * new_n), B12(new_n * new_n), B21(new_n * new_n), B22(new_n * new_n);
-  std::vector<double> C11(new_n * new_n), C12(new_n * new_n), C21(new_n * new_n), C22(new_n * new_n);
-  std::vector<double> M1(new_n * new_n), M2(new_n * new_n), M3(new_n * new_n), M4(new_n * new_n), M5(new_n * new_n), M6(new_n * new_n), M7(new_n * new_n);
-  std::vector<double> temp1(new_n * new_n), temp2(new_n * new_n);
+  std::vector<double> A11(new_n * new_n);
+  std::vector<double> A12(new_n * new_n);
+  std::vector<double> A21(new_n * new_n);
+  std::vector<double> A22(new_n * new_n);
+  std::vector<double> B11(new_n * new_n);
+  std::vector<double> B12(new_n * new_n);
+  std::vector<double> B21(new_n * new_n);
+  std::vector<double> B22(new_n * new_n);
+  std::vector<double> C11(new_n * new_n);
+  std::vector<double> C12(new_n * new_n);
+  std::vector<double> C21(new_n * new_n);
+  std::vector<double> C22(new_n * new_n);
+  std::vector<double> M1(new_n * new_n);
+  std::vector<double> M2(new_n * new_n);
+  std::vector<double> M3(new_n * new_n);
+  std::vector<double> M4(new_n * new_n);
+  std::vector<double> M5(new_n * new_n);
+  std::vector<double> M6(new_n * new_n);
+  std::vector<double> M7(new_n * new_n);
+  std::vector<double> temp1(new_n * new_n);
+  std::vector<double> temp2(new_n * new_n);
 
   for (size_t i = 0; i < new_n; ++i) {
     for (size_t j = 0; j < new_n; ++j) {
@@ -132,11 +148,7 @@ bool StrassenAlgorithmSequential::validation() {
   }
 
   n = *reinterpret_cast<size_t*>(taskData->inputs[0]);
-  if (n <= 0 || (n & (n - 1)) != 0) {
-    return false;
-  }
-
-  return true;
+  return n > 0 && (n & (n - 1)) == 0;
 }
 
 bool StrassenAlgorithmSequential::run() {
@@ -185,9 +197,7 @@ bool StrassenAlgorithmParallel::validation() {
     }
 
     n = *reinterpret_cast<size_t*>(taskData->inputs[0]);
-    if (n <= 0 || (n & (n - 1)) != 0) {
-      return false;
-    }
+    return n > 0 && (n & (n - 1)) == 0;
   }
   return true;
 }
@@ -205,8 +215,8 @@ bool StrassenAlgorithmParallel::run() {
     boost::mpi::scatterv(world, A_.data(), sizes_a, displs_a, local_A.data(), loc_mat_size, 0);
     boost::mpi::scatterv(world, B_.data(), sizes_a, displs_a, local_B.data(), loc_mat_size, 0);
   } else {
-    boost::mpi::scatterv(world, local_A.data(), loc_mat_size, 0);
-    boost::mpi::scatterv(world, local_B.data(), loc_mat_size, 0);
+    boost::mpi::scatterv(world, nullptr, sizes_a, displs_a, local_A.data(), loc_mat_size, 0);
+    boost::mpi::scatterv(world, nullptr, sizes_a, displs_a, local_B.data(), loc_mat_size, 0);
   }
 
   strassen(local_A, local_B, local_C, n / world.size());
@@ -270,11 +280,27 @@ void StrassenAlgorithmParallel::strassen(const std::vector<double>& A, const std
   }
 
   size_t new_n = n / 2;
-  std::vector<double> A11(new_n * new_n), A12(new_n * new_n), A21(new_n * new_n), A22(new_n * new_n);
-  std::vector<double> B11(new_n * new_n), B12(new_n * new_n), B21(new_n * new_n), B22(new_n * new_n);
-  std::vector<double> C11(new_n * new_n), C12(new_n * new_n), C21(new_n * new_n), C22(new_n * new_n);
-  std::vector<double> M1(new_n * new_n), M2(new_n * new_n), M3(new_n * new_n), M4(new_n * new_n), M5(new_n * new_n), M6(new_n * new_n), M7(new_n * new_n);
-  std::vector<double> temp1(new_n * new_n), temp2(new_n * new_n);
+  std::vector<double> A11(new_n * new_n);
+  std::vector<double> A12(new_n * new_n);
+  std::vector<double> A21(new_n * new_n);
+  std::vector<double> A22(new_n * new_n);
+  std::vector<double> B11(new_n * new_n);
+  std::vector<double> B12(new_n * new_n);
+  std::vector<double> B21(new_n * new_n);
+  std::vector<double> B22(new_n * new_n);
+  std::vector<double> C11(new_n * new_n);
+  std::vector<double> C12(new_n * new_n);
+  std::vector<double> C21(new_n * new_n);
+  std::vector<double> C22(new_n * new_n);
+  std::vector<double> M1(new_n * new_n);
+  std::vector<double> M2(new_n * new_n);
+  std::vector<double> M3(new_n * new_n);
+  std::vector<double> M4(new_n * new_n);
+  std::vector<double> M5(new_n * new_n);
+  std::vector<double> M6(new_n * new_n);
+  std::vector<double> M7(new_n * new_n);
+  std::vector<double> temp1(new_n * new_n);
+  std::vector<double> temp2(new_n * new_n);
 
   for (size_t i = 0; i < new_n; ++i) {
     for (size_t j = 0; j < new_n; ++j) {
