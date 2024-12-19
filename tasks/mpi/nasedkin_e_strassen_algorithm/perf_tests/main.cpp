@@ -88,7 +88,7 @@ TEST(nasedkin_e_strassen_algorithm_mpi, test_pipeline_run) {
 TEST(nasedkin_e_strassen_algorithm_mpi, test_task_run) {
   boost::mpi::communicator world;
 
-  const size_t matrix_size = 512;
+  size_t matrix_size = 512;
   auto [A, B] = nasedkin_e_strassen_algorithm_mpi::generate_random_matrix(matrix_size);
 
   std::vector<double> A_flat(matrix_size * matrix_size);
