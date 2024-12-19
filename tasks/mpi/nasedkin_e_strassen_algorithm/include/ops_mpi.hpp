@@ -1,5 +1,6 @@
 #pragma once
 
+#include <boost/serialization/vector.hpp>
 #include <boost/mpi/communicator.hpp>
 #include <cstdlib>
 #include <ctime>
@@ -43,10 +44,10 @@ class StrassenAlgorithmMPI : public ppc::core::Task {
                                                   const std::vector<std::vector<double>>& C12,
                                                   const std::vector<std::vector<double>>& C21,
                                                   const std::vector<std::vector<double>>& C22);
-  gather_result(const std::vector<std::vector<double>>& localC,
+  void gather_result(const std::vector<std::vector<double>>& localC,
                 std::vector<std::vector<double>>& globalC,
                 int rank, int num_processes);
-  static split_matrix_for_processes(const std::vector<std::vector<double>>& matrix,
+  static void split_matrix_for_processes(const std::vector<std::vector<double>>& matrix,
                              std::vector<std::vector<double>>& localMatrix,
                              int rank, int num_processes);
 };

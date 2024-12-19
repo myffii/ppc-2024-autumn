@@ -139,6 +139,23 @@ std::vector<std::vector<double>> StrassenAlgorithmMPI::strassen_multiply(const s
   return merge_matrices(C11, C12, C21, C22);
 }
 
+void StrassenAlgorithmMPI::gather_result(const std::vector<std::vector<double>>& localC,
+                                         std::vector<std::vector<double>>& globalC,
+                                         int rank, int num_processes) {
+  int n = matrixA.size();
+  int block_size = n / std::sqrt(num_processes);
+  int size_per_process = block_size * block_size;
+  std::vector<int> counts(num_processes, size_per_process);
+  std::vector<int> displacements(num_processes);
+
+  // Calculate displacements for each process
+  for (int i = 0; i < num_processes; ++i) {
+    displacements[i] = i * size_per_process;
+  }
+
+  boost::mpi::gatherv(world, localC, globalC, counts, displacements, 0);
+}
+
 void StrassenAlgorithmMPI::split_matrix_for_processes(const std::vector<std::vector<double>>& matrix,
                                                       std::vector<std::vector<double>>& localMatrix,
                                                       int rank, int num_processes) {
@@ -153,25 +170,6 @@ void StrassenAlgorithmMPI::split_matrix_for_processes(const std::vector<std::vec
       localMatrix[i][j] = matrix[row_start + i][col_start + j];
     }
   }
-}
-
-void StrassenAlgorithmMPI::gather_result(const std::vector<std::vector<double>>& localC,
-                                         std::vector<std::vector<double>>& globalC,
-                                         int rank, int num_processes) {
-  int n = matrixA.size();
-  int block_size = n / std::sqrt(num_processes);
-  int size_per_process = block_size * block_size;
-  std::vector<int> counts(num_processes, size_per_process);
-  std::vector<int> displacements(num_processes);
-
-  // calculate displacements for each process
-  displacements[0] = 0;
-  for (int i = 1; i < num_processes; ++i) {
-    displacements[i] = displacements[i - 1] + counts[i - 1];
-  }
-
-  boost::mpi::gatherv(world, localC.data(), size_per_process, globalC.data(),
-                      counts, displacements, 0);
 }
 
 }  // namespace nasedkin_e_strassen_algorithm
