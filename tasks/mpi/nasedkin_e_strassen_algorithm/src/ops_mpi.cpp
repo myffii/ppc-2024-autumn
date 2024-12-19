@@ -2,6 +2,7 @@
 #include <boost/mpi/environment.hpp>
 #include <boost/mpi/communicator.hpp>
 #include <boost/mpi/collectives.hpp>
+#include <boost/serialization/vector.hpp>
 #include <vector>
 #include <algorithm>
 #include <iostream>

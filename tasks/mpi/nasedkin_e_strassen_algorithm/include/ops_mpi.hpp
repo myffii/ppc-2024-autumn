@@ -12,6 +12,10 @@ class StrassenMPITaskSequential {
  public:
   explicit StrassenMPITaskSequential(std::vector<std::vector<double>>& A, std::vector<std::vector<double>>& B);
   std::vector<std::vector<double>> run();
+  bool pre_processing() override;
+  bool validation() override;
+  bool run() override;
+  bool post_processing() override;
 
  private:
   std::vector<std::vector<double>> A_, B_;
@@ -27,6 +31,10 @@ class StrassenMPITaskParallel {
  public:
   explicit StrassenMPITaskParallel(std::vector<std::vector<double>>& A, std::vector<std::vector<double>>& B);
   std::vector<std::vector<double>> run();
+  bool pre_processing() override;
+  bool validation() override;
+  bool run() override;
+  bool post_processing() override;
 
  private:
   std::vector<std::vector<double>> A_, B_;
