@@ -6,6 +6,8 @@
 #include <memory>
 #include <string>
 
+#include "core/task/include/task.hpp"
+
 namespace nasedkin_e_strassen_algorithm {
 
 class StrassenMPITaskSequential : public ppc::core::Task {
