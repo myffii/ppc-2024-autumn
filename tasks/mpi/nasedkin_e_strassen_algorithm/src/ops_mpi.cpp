@@ -1,5 +1,5 @@
 #include "mpi/nasedkin_e_strassen_algorithm/include/ops_mpi.hpp"
-
+#include "mpi/nasedkin_e_strassen_algorithm/include/vector_serialization.hpp"
 #include <cmath>
 #include <iostream>
 #include <random>
