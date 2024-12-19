@@ -230,6 +230,7 @@ bool StrassenAlgorithmMPIParallel::run() {
   local_B.resize(loc_size, std::vector<double>(n, 0.0));
   local_C.resize(loc_size, std::vector<double>(n, 0.0));
 
+  // Отправка и получение данных с использованием объекта communicator
   if (world.rank() == 0) {
     for (int i = 0; i < world.size(); ++i) {
       for (int j = 0; j < sizes_a[i]; ++j) {
@@ -238,15 +239,15 @@ bool StrassenAlgorithmMPIParallel::run() {
           local_B[j][k] = B_[displs_a[i] + j][k];
         }
       }
-      boost::mpi::send(world, i, 0, local_A);
-      boost::mpi::send(world, i, 1, local_B);
+      world.send(i, 0, local_A);  // Используйте world.send вместо boost::mpi::send
+      world.send(i, 1, local_B);  // Используйте world.send вместо boost::mpi::send
     }
   } else {
-    boost::mpi::recv(world, 0, 0, local_A);
-    boost::mpi::recv(world, 0, 1, local_B);
+    world.recv(0, 0, local_A);  // Используйте world.recv вместо boost::mpi::recv
+    world.recv(0, 1, local_B);  // Используйте world.recv вместо boost::mpi::recv
   }
 
-  // Perform local matrix multiplication
+  // Выполнение локального умножения матриц
   for (int i = 0; i < loc_size; ++i) {
     for (size_t j = 0; j < n; ++j) {
       for (size_t k = 0; k < n; ++k) {
@@ -257,7 +258,7 @@ bool StrassenAlgorithmMPIParallel::run() {
 
   if (world.rank() == 0) {
     for (int i = 0; i < world.size(); ++i) {
-      boost::mpi::recv(world, i, 2, local_C);
+      world.recv(i, 2, local_C);  // Используйте world.recv вместо boost::mpi::recv
       for (int j = 0; j < sizes_a[i]; ++j) {
         for (size_t k = 0; k < n; ++k) {
           C_[displs_a[i] + j][k] = local_C[j][k];
@@ -265,7 +266,7 @@ bool StrassenAlgorithmMPIParallel::run() {
       }
     }
   } else {
-    boost::mpi::send(world, 0, 2, local_C);
+    world.send(0, 2, local_C);  // Используйте world.send вместо boost::mpi::send
   }
 
   return true;
