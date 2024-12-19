@@ -43,8 +43,9 @@ bool StrassenAlgorithmMPI::pre_processing() {
   std::vector<double> local_matrixA(sendcounts[world.rank()]);
   std::vector<double> local_matrixB(sendcounts[world.rank()]);
 
-  boost::mpi::scatterv(world, matrixA.data(), sendcounts, displs, local_matrixA.data(), 0);
-  boost::mpi::scatterv(world, matrixB.data(), sendcounts, displs, local_matrixB.data(), 0);
+  // Используем scatterv с правильным количеством аргументов
+  boost::mpi::scatterv(world, matrixA.data()->data(), sendcounts, displs, local_matrixA.data(), 0);
+  boost::mpi::scatterv(world, matrixB.data()->data(), sendcounts, displs, local_matrixB.data(), 0);
 
   // Преобразуем локальные данные обратно в матрицы
   matrixA.clear();
@@ -67,7 +68,7 @@ bool StrassenAlgorithmMPI::run() {
 
   // Собираем результаты от всех процессов
   std::vector<double> local_result(resultMatrix.size() * n);
-  for (int i = 0; i < resultMatrix.size(); ++i) {
+  for (int i = 0; i < static_cast<int>(resultMatrix.size()); ++i) {  // Исправлено сравнение
     std::copy(resultMatrix[i].begin(), resultMatrix[i].end(), local_result.begin() + i * n);
   }
 
