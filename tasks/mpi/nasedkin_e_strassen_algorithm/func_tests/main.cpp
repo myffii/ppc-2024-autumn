@@ -1,132 +1,89 @@
 #include <gtest/gtest.h>
 
+#include <boost/mpi/communicator.hpp>
+#include <boost/mpi/environment.hpp>
+#include <cmath>
+#include <memory>
+#include <random>
+#include <vector>
+
 #include "mpi/nasedkin_e_strassen_algorithm/include/ops_mpi.hpp"
-#include "mpi/nasedkin_e_strassen_algorithm/src/ops_mpi.cpp"
 
-TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_2x2) {
-  auto taskData = std::make_shared<ppc::core::TaskData>();
-  taskData->inputs_count.push_back(2);
+std::pair<std::vector<double>, std::vector<double>> generate_random_matrix(int n, double min_val = -10.0, double max_val = 10.0) {
+  std::vector<double> A(n * n);
+  std::vector<double> B(n * n);
 
-  nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI strassen_task(taskData);
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::uniform_real_distribution<> dist(min_val, max_val);
 
-  std::vector<std::vector<double>> matrixA;
-  std::vector<std::vector<double>> matrixB;
-  nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI::generate_random_matrix(2, matrixA);
-  nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI::generate_random_matrix(2, matrixB);
-  strassen_task.set_matrices(matrixA, matrixB);
+  for (int i = 0; i < n * n; ++i) {
+    A[i] = dist(gen);
+    B[i] = dist(gen);
+  }
 
-  ASSERT_TRUE(strassen_task.validation()) << "Validation failed for random matrix";
-  ASSERT_TRUE(strassen_task.pre_processing()) << "Pre-processing failed for random matrix";
-  ASSERT_TRUE(strassen_task.run()) << "Run failed for random matrix";
-  ASSERT_TRUE(strassen_task.post_processing()) << "Post-processing failed for random matrix";
+  return {A, B};
 }
 
-TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_4x4) {
-  auto taskData = std::make_shared<ppc::core::TaskData>();
-  taskData->inputs_count.push_back(4);
+void run_strassen_test_for_matrix_size(size_t matrix_size) {
+  boost::mpi::communicator world;
 
-  nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI strassen_task(taskData);
+  auto [A_flat, B_flat] = generate_random_matrix(matrix_size);
 
-  std::vector<std::vector<double>> matrixA;
-  std::vector<std::vector<double>> matrixB;
-  nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI::generate_random_matrix(4, matrixA);
-  nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI::generate_random_matrix(4, matrixB);
-  strassen_task.set_matrices(matrixA, matrixB);
+  std::vector<double> C_parallel(matrix_size * matrix_size, 0.0);
+  std::vector<double> C_sequential(matrix_size * matrix_size, 0.0);
 
-  ASSERT_TRUE(strassen_task.validation()) << "Validation failed for random matrix";
-  ASSERT_TRUE(strassen_task.pre_processing()) << "Pre-processing failed for random matrix";
-  ASSERT_TRUE(strassen_task.run()) << "Run failed for random matrix";
-  ASSERT_TRUE(strassen_task.post_processing()) << "Post-processing failed for random matrix";
+  size_t matrix_size_copy = matrix_size;
+
+  std::shared_ptr<ppc::core::TaskData> taskDataPar = std::make_shared<ppc::core::TaskData>();
+  if (world.rank() == 0) {
+    taskDataPar->inputs.emplace_back(reinterpret_cast<uint8_t*>(&matrix_size_copy));
+    taskDataPar->inputs_count.emplace_back(1);
+    taskDataPar->inputs.emplace_back(reinterpret_cast<uint8_t*>(A_flat.data()));
+    taskDataPar->inputs_count.emplace_back(A_flat.size());
+    taskDataPar->inputs.emplace_back(reinterpret_cast<uint8_t*>(B_flat.data()));
+    taskDataPar->inputs_count.emplace_back(B_flat.size());
+    taskDataPar->outputs.emplace_back(reinterpret_cast<uint8_t*>(C_parallel.data()));
+    taskDataPar->outputs_count.emplace_back(C_parallel.size());
+  }
+
+  nasedkin_e_strassen_algorithm_mpi::StrassenParallel strassen_parallel(taskDataPar);
+  ASSERT_TRUE(strassen_parallel.validation());
+  strassen_parallel.pre_processing();
+  strassen_parallel.run();
+  strassen_parallel.post_processing();
+
+  if (world.rank() == 0) {
+    std::shared_ptr<ppc::core::TaskData> taskDataSeq = std::make_shared<ppc::core::TaskData>();
+    taskDataSeq->inputs.emplace_back(reinterpret_cast<uint8_t*>(&matrix_size_copy));
+    taskDataSeq->inputs_count.emplace_back(1);
+    taskDataSeq->inputs.emplace_back(reinterpret_cast<uint8_t*>(A_flat.data()));
+    taskDataSeq->inputs_count.emplace_back(A_flat.size());
+    taskDataSeq->inputs.emplace_back(reinterpret_cast<uint8_t*>(B_flat.data()));
+    taskDataSeq->inputs_count.emplace_back(B_flat.size());
+    taskDataSeq->outputs.emplace_back(reinterpret_cast<uint8_t*>(C_sequential.data()));
+    taskDataSeq->outputs_count.emplace_back(C_sequential.size());
+
+    nasedkin_e_strassen_algorithm_mpi::StrassenSequential strassen_sequential(taskDataSeq);
+    ASSERT_TRUE(strassen_sequential.validation());
+    strassen_sequential.pre_processing();
+    strassen_sequential.run();
+    strassen_sequential.post_processing();
+  }
+
+  if (world.rank() == 0) {
+    for (size_t i = 0; i < matrix_size * matrix_size; ++i) {
+      ASSERT_NEAR(C_parallel[i], C_sequential[i], 1e-3) << "Mismatch at index " << i;
+    }
+  }
 }
 
-TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_8x8) {
-  auto taskData = std::make_shared<ppc::core::TaskData>();
-  taskData->inputs_count.push_back(8);
-
-  nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI strassen_task(taskData);
-
-  std::vector<std::vector<double>> matrixA;
-  std::vector<std::vector<double>> matrixB;
-  nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI::generate_random_matrix(8, matrixA);
-  nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI::generate_random_matrix(8, matrixB);
-  strassen_task.set_matrices(matrixA, matrixB);
-
-  ASSERT_TRUE(strassen_task.validation()) << "Validation failed for random matrix";
-  ASSERT_TRUE(strassen_task.pre_processing()) << "Pre-processing failed for random matrix";
-  ASSERT_TRUE(strassen_task.run()) << "Run failed for random matrix";
-  ASSERT_TRUE(strassen_task.post_processing()) << "Post-processing failed for random matrix";
-}
-
-/*
-TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_64x64) {
-  auto taskData = std::make_shared<ppc::core::TaskData>();
-  taskData->inputs_count.push_back(64);
-
-  nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI strassen_task(taskData);
-
-  std::vector<std::vector<double>> matrixA;
-  std::vector<std::vector<double>> matrixB;
-  nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI::generate_random_matrix(64, matrixA);
-  nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI::generate_random_matrix(64, matrixB);
-  strassen_task.set_matrices(matrixA, matrixB);
-
-  ASSERT_TRUE(strassen_task.validation()) << "Validation failed for random matrix";
-  ASSERT_TRUE(strassen_task.pre_processing()) << "Pre-processing failed for random matrix";
-  ASSERT_TRUE(strassen_task.run()) << "Run failed for random matrix";
-  ASSERT_TRUE(strassen_task.post_processing()) << "Post-processing failed for random matrix";
-}
-
-TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_128x128) {
-    auto taskData = std::make_shared<ppc::core::TaskData>();
-    taskData->inputs_count.push_back(128);
-
-    nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI strassen_task(taskData);
-
-    std::vector<std::vector<double>> matrixA;
-    std::vector<std::vector<double>> matrixB;
-    nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI::generate_random_matrix(128, matrixA);
-    nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI::generate_random_matrix(128, matrixB);
-    strassen_task.set_matrices(matrixA, matrixB);
-
-    ASSERT_TRUE(strassen_task.validation()) << "Validation failed for random matrix";
-    ASSERT_TRUE(strassen_task.pre_processing()) << "Pre-processing failed for random matrix";
-    ASSERT_TRUE(strassen_task.run()) << "Run failed for random matrix";
-    ASSERT_TRUE(strassen_task.post_processing()) << "Post-processing failed for random matrix";
-}
-
-TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_256x256) {
-    auto taskData = std::make_shared<ppc::core::TaskData>();
-    taskData->inputs_count.push_back(256);
-
-    nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI strassen_task(taskData);
-
-    std::vector<std::vector<double>> matrixA;
-    std::vector<std::vector<double>> matrixB;
-    nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI::generate_random_matrix(256, matrixA);
-    nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI::generate_random_matrix(256, matrixB);
-    strassen_task.set_matrices(matrixA, matrixB);
-
-    ASSERT_TRUE(strassen_task.validation()) << "Validation failed for random matrix";
-    ASSERT_TRUE(strassen_task.pre_processing()) << "Pre-processing failed for random matrix";
-    ASSERT_TRUE(strassen_task.run()) << "Run failed for random matrix";
-    ASSERT_TRUE(strassen_task.post_processing()) << "Post-processing failed for random matrix";
-}
-
-TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_512x512) {
-  auto taskData = std::make_shared<ppc::core::TaskData>();
-  taskData->inputs_count.push_back(512);
-
-  nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI strassen_task(taskData);
-
-  std::vector<std::vector<double>> matrixA;
-  std::vector<std::vector<double>> matrixB;
-  nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI::generate_random_matrix(512, matrixA);
-  nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI::generate_random_matrix(512, matrixB);
-  strassen_task.set_matrices(matrixA, matrixB);
-
-  ASSERT_TRUE(strassen_task.validation()) << "Validation failed for random matrix";
-  ASSERT_TRUE(strassen_task.pre_processing()) << "Pre-processing failed for random matrix";
-  ASSERT_TRUE(strassen_task.run()) << "Run failed for random matrix";
-  ASSERT_TRUE(strassen_task.post_processing()) << "Post-processing failed for random matrix";
-}
-*/
+TEST(nasedkin_e_strassen_algorithm_mpi, test_matrix_2x2) { run_strassen_test_for_matrix_size(2); }
+TEST(nasedkin_e_strassen_algorithm_mpi, test_matrix_4x4) { run_strassen_test_for_matrix_size(4); }
+TEST(nasedkin_e_strassen_algorithm_mpi, test_matrix_8x8) { run_strassen_test_for_matrix_size(8); }
+TEST(nasedkin_e_strassen_algorithm_mpi, test_matrix_16x16) { run_strassen_test_for_matrix_size(16); }
+TEST(nasedkin_e_strassen_algorithm_mpi, test_matrix_32x32) { run_strassen_test_for_matrix_size(32); }
+TEST(nasedkin_e_strassen_algorithm_mpi, test_matrix_64x64) { run_strassen_test_for_matrix_size(64); }
+TEST(nasedkin_e_strassen_algorithm_mpi, test_matrix_128x128) { run_strassen_test_for_matrix_size(128); }
+TEST(nasedkin_e_strassen_algorithm_mpi, test_matrix_256x256) { run_strassen_test_for_matrix_size(256); }
+TEST(nasedkin_e_strassen_algorithm_mpi, test_matrix_512x512) { run_strassen_test_for_matrix_size(512); }
