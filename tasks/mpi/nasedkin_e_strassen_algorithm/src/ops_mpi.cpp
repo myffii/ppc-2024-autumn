@@ -1,194 +1,161 @@
 #include "mpi/nasedkin_e_strassen_algorithm/include/ops_mpi.hpp"
-
-#include <cmath>
-#include <iostream>
+#include <boost/mpi/environment.hpp>
+#include <boost/mpi/communicator.hpp>
 #include <boost/mpi/collectives.hpp>
-#include <boost/serialization/vector.hpp>
+#include <vector>
+#include <algorithm>
+#include <iostream>
 
 namespace nasedkin_e_strassen_algorithm {
 
-bool StrassenAlgorithmMPI::pre_processing() {
-  if (!validation()) {
-    return false;
-  }
+StrassenMPITaskParallel::StrassenMPITaskParallel(std::vector<std::vector<double>>& A, std::vector<std::vector<double>>& B)
+    : A_(A), B_(B) {}
 
-  result.resize(n, std::vector<double>(n, 0.0));
-
-  std::vector<std::vector<double>> local_A;
-  std::vector<std::vector<double>> local_B;
-  distribute_matrix(A, local_A);
-  distribute_matrix(B, local_B);
-
-  return true;
+std::vector<std::vector<double>> StrassenMPITaskParallel::run() {
+  return strassen_parallel(A_, B_);
 }
 
-bool StrassenAlgorithmMPI::validation() {
-  if (taskData->inputs_count.empty()) {
-    return false;
+std::vector<std::vector<double>> StrassenMPITaskParallel::strassen_parallel(const std::vector<std::vector<double>>& A, const std::vector<std::vector<double>>& B) {
+  int n = A.size();
+  if (n <= 2) {
+    return brute_force(A, B);
   }
 
-  n = taskData->inputs_count[0];
-  if (n <= 0 || (n & (n - 1)) != 0) {
-    return false;
+  // Разделение матриц на подматрицы
+  auto a = split(A, 0, 0, n / 2);
+  auto b = split(A, 0, n / 2, n / 2);
+  auto c = split(A, n / 2, 0, n / 2);
+  auto d = split(A, n / 2, n / 2, n / 2);
+
+  auto e = split(B, 0, 0, n / 2);
+  auto f = split(B, 0, n / 2, n / 2);
+  auto g = split(B, n / 2, 0, n / 2);
+  auto h = split(B, n / 2, n / 2, n / 2);
+
+  // Распределение задач между процессами
+  std::vector<std::vector<double>> p1, p2, p3, p4, p5, p6, p7;
+
+  if (world.rank() == 0) {
+    // Распределение задач между процессами
+    std::vector<boost::mpi::request> requests;
+
+    requests.push_back(world.isend(1, 0, add(a, d)));
+    requests.push_back(world.isend(1, 1, add(e, h)));
+
+    requests.push_back(world.isend(2, 0, add(c, d)));
+    requests.push_back(world.isend(2, 1, e));
+
+    requests.push_back(world.isend(3, 0, a));
+    requests.push_back(world.isend(3, 1, subtract(f, h)));
+
+    requests.push_back(world.isend(4, 0, d));
+    requests.push_back(world.isend(4, 1, subtract(g, e)));
+
+    requests.push_back(world.isend(5, 0, add(a, b)));
+    requests.push_back(world.isend(5, 1, h));
+
+    requests.push_back(world.isend(6, 0, subtract(b, d)));
+    requests.push_back(world.isend(6, 1, add(g, h)));
+
+    requests.push_back(world.isend(7, 0, subtract(a, c)));
+    requests.push_back(world.isend(7, 1, add(e, f)));
+
+    // Ожидание завершения отправки данных
+    boost::mpi::wait_all(requests.begin(), requests.end());
+
+    // Получение результатов от других процессов
+    world.recv(1, 2, p1);
+    world.recv(2, 2, p2);
+    world.recv(3, 2, p3);
+    world.recv(4, 2, p4);
+    world.recv(5, 2, p5);
+    world.recv(6, 2, p6);
+    world.recv(7, 2, p7);
+  } else {
+    // Получение данных от процесса 0
+    std::vector<std::vector<double>> local_A, local_B;
+    world.recv(0, world.rank() - 1, local_A);
+    world.recv(0, world.rank(), local_B);
+
+    // Выполнение вычислений
+    auto local_result = strassen_parallel(local_A, local_B);
+
+    // Отправка результата обратно процессу 0
+    world.send(0, 2, local_result);
   }
 
-  A.resize(n, std::vector<double>(n, 0.0));
-  B.resize(n, std::vector<double>(n, 0.0));
+  // Сборка результата на процессе 0
+  if (world.rank() == 0) {
+    auto C11 = add(subtract(add(p1, p4), p5), p7);
+    auto C12 = add(p3, p5);
+    auto C21 = add(p2, p4);
+    auto C22 = add(subtract(add(p1, p3), p2), p6);
 
-  return true;
+    return combine(C11, C12, C21, C22);
+  } else {
+    return {}; // Возвращаем пустую матрицу для других процессов
+  }
 }
 
-bool StrassenAlgorithmMPI::run() {
-  std::vector<std::vector<double>> local_result(n / world.size(), std::vector<double>(n, 0.0));
-  strassen_multiply(A, B, local_result, n / world.size());
-
-  gather_result(local_result, result);
-
-  return true;
-}
-
-bool StrassenAlgorithmMPI::post_processing() { return true; }
-
-void StrassenAlgorithmMPI::strassen_multiply(const std::vector<std::vector<double>>& local_A, const std::vector<std::vector<double>>& local_B, std::vector<std::vector<double>>& local_result, int size) {
-  if (size <= 2) {
-    for (int i = 0; i < size; ++i) {
-      for (int j = 0; j < size; ++j) {
-        local_result[i][j] = 0;
-        for (int k = 0; k < size; ++k) {
-          local_result[i][j] += local_A[i][k] * local_B[k][j];
-        }
+std::vector<std::vector<double>> StrassenMPITaskParallel::brute_force(const std::vector<std::vector<double>>& A, const std::vector<std::vector<double>>& B) {
+  int n = A.size();
+  int m = A[0].size();
+  int p = B[0].size();
+  std::vector<std::vector<double>> C(n, std::vector<double>(p, 0.0));
+  for (int i = 0; i < n; i++) {
+    for (int j = 0; j < p; j++) {
+      for (int k = 0; k < m; k++) {
+        C[i][j] += A[i][k] * B[k][j];
       }
     }
-    return;
   }
-
-  int new_size = size / 2;
-  std::vector<std::vector<double>> A11(new_size, std::vector<double>(new_size));
-  std::vector<std::vector<double>> A12(new_size, std::vector<double>(new_size));
-  std::vector<std::vector<double>> A21(new_size, std::vector<double>(new_size));
-  std::vector<std::vector<double>> A22(new_size, std::vector<double>(new_size));
-
-  std::vector<std::vector<double>> B11(new_size, std::vector<double>(new_size));
-  std::vector<std::vector<double>> B12(new_size, std::vector<double>(new_size));
-  std::vector<std::vector<double>> B21(new_size, std::vector<double>(new_size));
-  std::vector<std::vector<double>> B22(new_size, std::vector<double>(new_size));
-
-  std::vector<std::vector<double>> C11(new_size, std::vector<double>(new_size));
-  std::vector<std::vector<double>> C12(new_size, std::vector<double>(new_size));
-  std::vector<std::vector<double>> C21(new_size, std::vector<double>(new_size));
-  std::vector<std::vector<double>> C22(new_size, std::vector<double>(new_size));
-
-  split_matrix(local_A, A11, A12, A21, A22, new_size);
-  split_matrix(local_B, B11, B12, B21, B22, new_size);
-
-  std::vector<std::vector<double>> M1(new_size, std::vector<double>(new_size));
-  std::vector<std::vector<double>> M2(new_size, std::vector<double>(new_size));
-  std::vector<std::vector<double>> M3(new_size, std::vector<double>(new_size));
-  std::vector<std::vector<double>> M4(new_size, std::vector<double>(new_size));
-  std::vector<std::vector<double>> M5(new_size, std::vector<double>(new_size));
-  std::vector<std::vector<double>> M6(new_size, std::vector<double>(new_size));
-  std::vector<std::vector<double>> M7(new_size, std::vector<double>(new_size));
-
-  add_matrices(A11, A22, M1, new_size);
-  add_matrices(B11, B22, M2, new_size);
-  strassen_multiply(M1, M2, M3, new_size);
-
-  add_matrices(A21, A22, M1, new_size);
-  strassen_multiply(M1, B11, M4, new_size);
-
-  subtract_matrices(B12, B22, M1, new_size);
-  strassen_multiply(A11, M1, M5, new_size);
-
-  subtract_matrices(B21, B11, M1, new_size);
-  strassen_multiply(A22, M1, M6, new_size);
-
-  add_matrices(A11, A12, M1, new_size);
-  strassen_multiply(M1, B22, M7, new_size);
-
-  add_matrices(M3, M6, M1, new_size);
-  subtract_matrices(M5, M4, M2, new_size);
-  add_matrices(M1, M2, C11, new_size);
-
-  add_matrices(M5, M7, C12, new_size);
-
-  add_matrices(M6, M4, C21, new_size);
-
-  subtract_matrices(M3, M7, M1, new_size);
-  add_matrices(M5, M1, C22, new_size);
-
-  join_matrices(C11, C12, C21, C22, local_result, size);
+  return C;
 }
 
-void StrassenAlgorithmMPI::add_matrices(const std::vector<std::vector<double>>& A, const std::vector<std::vector<double>>& B, std::vector<std::vector<double>>& C, int size) {
-  for (int i = 0; i < size; ++i) {
-    for (int j = 0; j < size; ++j) {
+std::vector<std::vector<double>> StrassenMPITaskParallel::add(const std::vector<std::vector<double>>& A, const std::vector<std::vector<double>>& B) {
+  int n = A.size();
+  std::vector<std::vector<double>> C(n, std::vector<double>(n, 0.0));
+  for (int i = 0; i < n; i++) {
+    for (int j = 0; j < n; j++) {
       C[i][j] = A[i][j] + B[i][j];
     }
   }
+  return C;
 }
 
-void StrassenAlgorithmMPI::subtract_matrices(const std::vector<std::vector<double>>& A, const std::vector<std::vector<double>>& B, std::vector<std::vector<double>>& C, int size) {
-  for (int i = 0; i < size; ++i) {
-    for (int j = 0; j < size; ++j) {
+std::vector<std::vector<double>> StrassenMPITaskParallel::subtract(const std::vector<std::vector<double>>& A, const std::vector<std::vector<double>>& B) {
+  int n = A.size();
+  std::vector<std::vector<double>> C(n, std::vector<double>(n, 0.0));
+  for (int i = 0; i < n; i++) {
+    for (int j = 0; j < n; j++) {
       C[i][j] = A[i][j] - B[i][j];
     }
   }
+  return C;
 }
 
-void StrassenAlgorithmMPI::split_matrix(const std::vector<std::vector<double>>& A, std::vector<std::vector<double>>& A11, std::vector<std::vector<double>>& A12, std::vector<std::vector<double>>& A21, std::vector<std::vector<double>>& A22, int size) {
-  for (int i = 0; i < size; ++i) {
-    for (int j = 0; j < size; ++j) {
-      A11[i][j] = A[i][j];
-      A12[i][j] = A[i][j + size];
-      A21[i][j] = A[i + size][j];
-      A22[i][j] = A[i + size][j + size];
-    }
-  }
-}
-
-void StrassenAlgorithmMPI::join_matrices(const std::vector<std::vector<double>>& C11, const std::vector<std::vector<double>>& C12, const std::vector<std::vector<double>>& C21, const std::vector<std::vector<double>>& C22, std::vector<std::vector<double>>& C, int size) {
-  for (int i = 0; i < size; ++i) {
-    for (int j = 0; j < size; ++j) {
+std::vector<std::vector<double>> StrassenMPITaskParallel::combine(const std::vector<std::vector<double>>& C11, const std::vector<std::vector<double>>& C12, const std::vector<std::vector<double>>& C21, const std::vector<std::vector<double>>& C22) {
+  int n = C11.size();
+  std::vector<std::vector<double>> C(2 * n, std::vector<double>(2 * n, 0.0));
+  for (int i = 0; i < n; i++) {
+    for (int j = 0; j < n; j++) {
       C[i][j] = C11[i][j];
-      C[i][j + size] = C12[i][j];
-      C[i + size][j] = C21[i][j];
-      C[i + size][j + size] = C22[i][j];
+      C[i][j + n] = C12[i][j];
+      C[i + n][j] = C21[i][j];
+      C[i + n][j + n] = C22[i][j];
     }
   }
+  return C;
 }
 
-void StrassenAlgorithmMPI::set_matrices(const std::vector<std::vector<double>>& matrixA, const std::vector<std::vector<double>>& matrixB) {
-  A = matrixA;
-  B = matrixB;
-  n = static_cast<int>(matrixA.size());
-}
-
-void StrassenAlgorithmMPI::generate_random_matrix(int size, std::vector<std::vector<double>>& matrix) {
-  matrix.resize(size, std::vector<double>(size, 0.0));
-
-  std::srand(static_cast<unsigned>(std::time(nullptr)));
-
-  for (int i = 0; i < size; ++i) {
-    for (int j = 0; j < size; ++j) {
-      matrix[i][j] = static_cast<double>(std::rand() % 10 + 1);
+std::vector<std::vector<double>> StrassenMPITaskParallel::split(const std::vector<std::vector<double>>& matrix, int row_start, int col_start, int size) {
+  std::vector<std::vector<double>> result(size, std::vector<double>(size, 0.0));
+  for (int i = 0; i < size; i++) {
+    for (int j = 0; j < size; j++) {
+      result[i][j] = matrix[row_start + i][col_start + j];
     }
   }
-}
-
-void StrassenAlgorithmMPI::distribute_matrix(const std::vector<std::vector<double>>& matrix, std::vector<std::vector<double>>& distributed_matrix) {
-  int num_processes = world.size();
-  int local_size = n / num_processes;
-
-  // Scatter the matrix rows to different processes
-  boost::mpi::scatter(world, matrix, distributed_matrix, 0);
-}
-
-void StrassenAlgorithmMPI::gather_result(const std::vector<std::vector<double>>& local_result, std::vector<std::vector<double>>& gathered_result) {
-  int num_processes = world.size();
-  int local_size = n / num_processes;
-
-  // Gather the result rows from different processes
-  boost::mpi::gather(world, local_result, gathered_result, 0);
+  return result;
 }
 
 }  // namespace nasedkin_e_strassen_algorithm

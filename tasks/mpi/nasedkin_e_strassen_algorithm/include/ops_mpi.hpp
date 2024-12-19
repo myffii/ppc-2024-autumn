@@ -1,42 +1,42 @@
 #pragma once
 
 #include <boost/mpi/communicator.hpp>
-#include <cstdlib>
-#include <ctime>
-#include <memory>
+#include <boost/mpi/collectives.hpp>
 #include <vector>
-
-#include "core/task/include/task.hpp"
+#include <memory>
+#include <string>
 
 namespace nasedkin_e_strassen_algorithm {
 
-class StrassenAlgorithmMPI : public ppc::core::Task {
+class StrassenMPITaskSequential {
  public:
-  explicit StrassenAlgorithmMPI(std::shared_ptr<ppc::core::TaskData> taskData_) : Task(std::move(taskData_)) {}
-
-  bool pre_processing() override;
-  bool validation() override;
-  bool run() override;
-  bool post_processing() override;
-
-  void set_matrices(const std::vector<std::vector<double>>& matrixA, const std::vector<std::vector<double>>& matrixB);
-  static void generate_random_matrix(int size, std::vector<std::vector<double>>& matrix);
-  const std::vector<std::vector<double>>& get_result() const { return result; }
+  explicit StrassenMPITaskSequential(std::vector<std::vector<double>>& A, std::vector<std::vector<double>>& B);
+  std::vector<std::vector<double>> run();
 
  private:
-  boost::mpi::communicator world;
-  std::vector<std::vector<double>> A;
-  std::vector<std::vector<double>> B;
-  std::vector<std::vector<double>> result;
-  int n;
+  std::vector<std::vector<double>> A_, B_;
+  std::vector<std::vector<double>> strassen(const std::vector<std::vector<double>>& A, const std::vector<std::vector<double>>& B);
+  std::vector<std::vector<double>> brute_force(const std::vector<std::vector<double>>& A, const std::vector<std::vector<double>>& B);
+  std::vector<std::vector<double>> add(const std::vector<std::vector<double>>& A, const std::vector<std::vector<double>>& B);
+  std::vector<std::vector<double>> subtract(const std::vector<std::vector<double>>& A, const std::vector<std::vector<double>>& B);
+  std::vector<std::vector<double>> combine(const std::vector<std::vector<double>>& C11, const std::vector<std::vector<double>>& C12, const std::vector<std::vector<double>>& C21, const std::vector<std::vector<double>>& C22);
+  std::vector<std::vector<double>> split(const std::vector<std::vector<double>>& matrix, int row_start, int col_start, int size);
+};
 
-  void strassen_multiply(const std::vector<std::vector<double>>& local_A, const std::vector<std::vector<double>>& local_B, std::vector<std::vector<double>>& local_result, int size);
-  static void add_matrices(const std::vector<std::vector<double>>& A, const std::vector<std::vector<double>>& B, std::vector<std::vector<double>>& C, int size);
-  static void subtract_matrices(const std::vector<std::vector<double>>& A, const std::vector<std::vector<double>>& B, std::vector<std::vector<double>>& C, int size);
-  static void split_matrix(const std::vector<std::vector<double>>& A, std::vector<std::vector<double>>& A11, std::vector<std::vector<double>>& A12, std::vector<std::vector<double>>& A21, std::vector<std::vector<double>>& A22, int size);
-  static void join_matrices(const std::vector<std::vector<double>>& C11, const std::vector<std::vector<double>>& C12, const std::vector<std::vector<double>>& C21, const std::vector<std::vector<double>>& C22, std::vector<std::vector<double>>& C, int size);
-  void distribute_matrix(const std::vector<std::vector<double>>& matrix, std::vector<std::vector<double>>& distributed_matrix);
-  void gather_result(const std::vector<std::vector<double>>& local_result, std::vector<std::vector<double>>& gathered_result);
+class StrassenMPITaskParallel {
+ public:
+  explicit StrassenMPITaskParallel(std::vector<std::vector<double>>& A, std::vector<std::vector<double>>& B);
+  std::vector<std::vector<double>> run();
+
+ private:
+  std::vector<std::vector<double>> A_, B_;
+  boost::mpi::communicator world;
+  std::vector<std::vector<double>> strassen_parallel(const std::vector<std::vector<double>>& A, const std::vector<std::vector<double>>& B);
+  std::vector<std::vector<double>> brute_force(const std::vector<std::vector<double>>& A, const std::vector<std::vector<double>>& B);
+  std::vector<std::vector<double>> add(const std::vector<std::vector<double>>& A, const std::vector<std::vector<double>>& B);
+  std::vector<std::vector<double>> subtract(const std::vector<std::vector<double>>& A, const std::vector<std::vector<double>>& B);
+  std::vector<std::vector<double>> combine(const std::vector<std::vector<double>>& C11, const std::vector<std::vector<double>>& C12, const std::vector<std::vector<double>>& C21, const std::vector<std::vector<double>>& C22);
+  std::vector<std::vector<double>> split(const std::vector<std::vector<double>>& matrix, int row_start, int col_start, int size);
 };
 
 }  // namespace nasedkin_e_strassen_algorithm
