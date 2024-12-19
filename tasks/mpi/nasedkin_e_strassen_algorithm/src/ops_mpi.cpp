@@ -26,6 +26,13 @@ void StrassenAlgorithmMPI::set_matrices(const std::vector<std::vector<double>>& 
 }
 
 bool StrassenAlgorithmMPI::pre_processing() {
+  if (world.rank() == 0) {
+    boost::mpi::broadcast(world, matrixA, 0);
+    boost::mpi::broadcast(world, matrixB, 0);
+  } else {
+    boost::mpi::broadcast(world, matrixA, 0);
+    boost::mpi::broadcast(world, matrixB, 0);
+  }
   return !matrixA.empty() && !matrixB.empty() && matrixA.size() == matrixB.size();
 }
 
@@ -34,7 +41,24 @@ bool StrassenAlgorithmMPI::validation() {
 }
 
 bool StrassenAlgorithmMPI::run() {
-  resultMatrix = strassen_multiply(matrixA, matrixB);
+  int rank = world.rank();
+  int size = world.size();
+  int n = matrixA.size();
+
+  int rows_per_proc = n / size;
+  int start_row = rank * rows_per_proc;
+  int end_row = (rank == size - 1) ? n : start_row + rows_per_proc;
+
+  std::vector<std::vector<double>> local_A(rows_per_proc);
+  std::vector<std::vector<double>> local_B(rows_per_proc);
+  for (int i = 0; i < rows_per_proc; ++i) {
+    local_A[i] = matrixA[start_row + i];
+    local_B[i] = matrixB[start_row + i];
+  }
+
+  std::vector<std::vector<double>> local_result = strassen_multiply(local_A, local_B);
+
+  boost::mpi::gather(world, local_result, resultMatrix, 0);
   return true;
 }
 
@@ -106,37 +130,6 @@ std::vector<std::vector<double>> StrassenAlgorithmMPI::merge_matrices(const std:
     }
   }
   return C;
-}
-
-std::vector<std::vector<double>> StrassenAlgorithmMPI::strassen_multiply(const std::vector<std::vector<double>>& A,
-                                                                         const std::vector<std::vector<double>>& B) {
-  int n = A.size();
-  if (n <= 2) {
-    return add(A, B);
-  }
-
-  std::vector<std::vector<double>> A11;
-  std::vector<std::vector<double>> A12;
-  std::vector<std::vector<double>> A21;
-  std::vector<std::vector<double>> A22;
-  std::vector<std::vector<double>> B11;
-  std::vector<std::vector<double>> B12;
-  std::vector<std::vector<double>> B21;
-  std::vector<std::vector<double>> B22;
-  split_matrix(A, A11, A12, A21, A22);
-  split_matrix(B, B11, B12, B21, B22);
-
-  auto P1 = strassen_multiply(add(A11, A22), add(B11, B22));
-  auto P2 = strassen_multiply(add(A21, A22), B11);
-  auto P3 = strassen_multiply(A11, subtract(B12, B22));
-  auto P4 = strassen_multiply(A22, subtract(B21, B11));
-
-  auto C11 = add(P1, P4);
-  auto C12 = add(P3, P2);
-  auto C21 = add(P2, P4);
-  auto C22 = subtract(P1, P3);
-
-  return merge_matrices(C11, C12, C21, C22);
 }
 
 }  // namespace nasedkin_e_strassen_algorithm
