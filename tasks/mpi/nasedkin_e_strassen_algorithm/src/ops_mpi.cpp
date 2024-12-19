@@ -1,142 +1,429 @@
 #include "mpi/nasedkin_e_strassen_algorithm/include/ops_mpi.hpp"
 
+#include <mpi.h>
+
+#include <algorithm>
+#include <boost/mpi.hpp>
+#include <boost/serialization/vector.hpp>
 #include <cmath>
-#include <iostream>
-#include <random>
-#include <boost/mpi/collectives.hpp>
+#include <vector>
 
-namespace nasedkin_e_strassen_algorithm {
+#include "boost/mpi/collectives/broadcast.hpp"
 
-void StrassenAlgorithmMPI::generate_random_matrix(int size, std::vector<std::vector<double>>& matrix) {
-  matrix.resize(size, std::vector<double>(size));
-  std::random_device rd;
-  std::mt19937 gen(rd());
-  std::uniform_real_distribution<> dis(0, 10);
-  for (int i = 0; i < size; ++i) {
-    for (int j = 0; j < size; ++j) {
-      matrix[i][j] = dis(gen);
-    }
-  }
-}
+bool nasedkin_e_strassen_algorithm_mpi::StrassenSequential::pre_processing() {
+  internal_order_test();
+  n = *reinterpret_cast<size_t*>(taskData->inputs[0]);
 
-void StrassenAlgorithmMPI::set_matrices(const std::vector<std::vector<double>>& A,
-                                        const std::vector<std::vector<double>>& B) {
-  matrixA = A;
-  matrixB = B;
-}
+  A_.assign(n * n, 0.0);
+  B_.assign(n * n, 0.0);
+  C_.assign(n * n, 0.0);
 
-bool StrassenAlgorithmMPI::pre_processing() {
-  return !matrixA.empty() && !matrixB.empty() && matrixA.size() == matrixB.size();
-}
+  auto* A_input = reinterpret_cast<double*>(taskData->inputs[1]);
+  auto* B_input = reinterpret_cast<double*>(taskData->inputs[2]);
 
-bool StrassenAlgorithmMPI::validation() {
-  return !matrixA.empty() && matrixA.size() == matrixA[0].size();
-}
+  std::copy(A_input, A_input + n * n, A_.begin());
+  std::copy(B_input, B_input + n * n, B_.begin());
 
-bool StrassenAlgorithmMPI::run() {
-  resultMatrix = strassen_multiply(matrixA, matrixB);
   return true;
 }
 
-bool StrassenAlgorithmMPI::post_processing() {
-  if (world.rank() == 0) {
-    std::cout << "Resulting Matrix:\n";
-    for (const auto& row : resultMatrix) {
-      for (auto elem : row) {
-        std::cout << elem << " ";
+bool nasedkin_e_strassen_algorithm_mpi::StrassenSequential::validation() {
+  internal_order_test();
+
+  if (taskData->inputs_count.size() != 3 || taskData->outputs_count.size() != 1) {
+    return false;
+  }
+
+  n = *reinterpret_cast<size_t*>(taskData->inputs[0]);
+  if (n <= 0) {
+    return false;
+  }
+
+  return true;
+}
+
+bool nasedkin_e_strassen_algorithm_mpi::StrassenSequential::run() {
+  internal_order_test();
+  strassen_multiply(A_, B_, C_, n);
+  return true;
+}
+
+bool nasedkin_e_strassen_algorithm_mpi::StrassenSequential::post_processing() {
+  internal_order_test();
+  for (size_t i = 0; i < C_.size(); ++i) {
+    reinterpret_cast<double*>(taskData->outputs[0])[i] = C_[i];
+  }
+  return true;
+}
+
+void nasedkin_e_strassen_algorithm_mpi::StrassenSequential::strassen_multiply(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, size_t n) {
+  if (n <= 64) {
+    for (size_t i = 0; i < n; ++i) {
+      for (size_t j = 0; j < n; ++j) {
+        C[i * n + j] = 0;
+        for (size_t k = 0; k < n; ++k) {
+          C[i * n + j] += A[i * n + k] * B[k * n + j];
+        }
       }
-      std::cout << "\n";
+    }
+    return;
+  }
+
+  size_t m = n / 2;
+  std::vector<double> A11(m * m), A12(m * m), A21(m * m), A22(m * m);
+  std::vector<double> B11(m * m), B12(m * m), B21(m * m), B22(m * m);
+  std::vector<double> C11(m * m), C12(m * m), C21(m * m), C22(m * m);
+  std::vector<double> M1(m * m), M2(m * m), M3(m * m), M4(m * m), M5(m * m), M6(m * m), M7(m * m);
+  std::vector<double> temp1(m * m), temp2(m * m);
+
+  for (size_t i = 0; i < m; ++i) {
+    for (size_t j = 0; j < m; ++j) {
+      A11[i * m + j] = A[i * n + j];
+      A12[i * m + j] = A[i * n + j + m];
+      A21[i * m + j] = A[(i + m) * n + j];
+      A22[i * m + j] = A[(i + m) * n + j + m];
+
+      B11[i * m + j] = B[i * n + j];
+      B12[i * m + j] = B[i * n + j + m];
+      B21[i * m + j] = B[(i + m) * n + j];
+      B22[i * m + j] = B[(i + m) * n + j + m];
+    }
+  }
+
+  // M1 = (A11 + A22) * (B11 + B22)
+  std::vector<double> A11_plus_A22(m * m), B11_plus_B22(m * m);
+  for (size_t i = 0; i < m * m; ++i) {
+    A11_plus_A22[i] = A11[i] + A22[i];
+    B11_plus_B22[i] = B11[i] + B22[i];
+  }
+  strassen_multiply(A11_plus_A22, B11_plus_B22, M1, m);
+
+  // M2 = (A21 + A22) * B11
+  std::vector<double> A21_plus_A22(m * m);
+  for (size_t i = 0; i < m * m; ++i) {
+    A21_plus_A22[i] = A21[i] + A22[i];
+  }
+  strassen_multiply(A21_plus_A22, B11, M2, m);
+
+  // M3 = A11 * (B12 - B22)
+  std::vector<double> B12_minus_B22(m * m);
+  for (size_t i = 0; i < m * m; ++i) {
+    B12_minus_B22[i] = B12[i] - B22[i];
+  }
+  strassen_multiply(A11, B12_minus_B22, M3, m);
+
+  // M4 = A22 * (B21 - B11)
+  std::vector<double> B21_minus_B11(m * m);
+  for (size_t i = 0; i < m * m; ++i) {
+    B21_minus_B11[i] = B21[i] - B11[i];
+  }
+  strassen_multiply(A22, B21_minus_B11, M4, m);
+
+  // M5 = (A11 + A12) * B22
+  std::vector<double> A11_plus_A12(m * m);
+  for (size_t i = 0; i < m * m; ++i) {
+    A11_plus_A12[i] = A11[i] + A12[i];
+  }
+  strassen_multiply(A11_plus_A12, B22, M5, m);
+
+  // M6 = (A21 - A11) * (B11 + B12)
+  std::vector<double> A21_minus_A11(m * m), B11_plus_B12(m * m);
+  for (size_t i = 0; i < m * m; ++i) {
+    A21_minus_A11[i] = A21[i] - A11[i];
+    B11_plus_B12[i] = B11[i] + B12[i];
+  }
+  strassen_multiply(A21_minus_A11, B11_plus_B12, M6, m);
+
+  // M7 = (A12 - A22) * (B21 + B22)
+  std::vector<double> A12_minus_A22(m * m), B21_plus_B22(m * m);
+  for (size_t i = 0; i < m * m; ++i) {
+    A12_minus_A22[i] = A12[i] - A22[i];
+    B21_plus_B22[i] = B21[i] + B22[i];
+  }
+  strassen_multiply(A12_minus_A22, B21_plus_B22, M7, m);
+
+  // C11 = M1 + M4 - M5 + M7
+  for (size_t i = 0; i < m * m; ++i) {
+    C11[i] = M1[i] + M4[i] - M5[i] + M7[i];
+  }
+
+  // C12 = M3 + M5
+  for (size_t i = 0; i < m * m; ++i) {
+    C12[i] = M3[i] + M5[i];
+  }
+
+  // C21 = M2 + M4
+  for (size_t i = 0; i < m * m; ++i) {
+    C21[i] = M2[i] + M4[i];
+  }
+
+  // C22 = M1 - M2 + M3 + M6
+  for (size_t i = 0; i < m * m; ++i) {
+    C22[i] = M1[i] - M2[i] + M3[i] + M6[i];
+  }
+
+  for (size_t i = 0; i < m; ++i) {
+    for (size_t j = 0; j < m; ++j) {
+      C[i * n + j] = C11[i * m + j];
+      C[i * n + j + m] = C12[i * m + j];
+      C[(i + m) * n + j] = C21[i * m + j];
+      C[(i + m) * n + j + m] = C22[i * m + j];
+    }
+  }
+}
+
+bool nasedkin_e_strassen_algorithm_mpi::StrassenParallel::pre_processing() {
+  internal_order_test();
+  sizes_a.resize(world.size());
+  displs_a.resize(world.size());
+
+  sizes_b.resize(world.size());
+  displs_b.resize(world.size());
+
+  if (world.rank() == 0) {
+    n = *reinterpret_cast<size_t*>(taskData->inputs[0]);
+
+    A_.assign(n * n, 0.0);
+    B_.assign(n * n, 0.0);
+    C_.assign(n * n, 0.0);
+
+    auto* A_input = reinterpret_cast<double*>(taskData->inputs[1]);
+    auto* B_input = reinterpret_cast<double*>(taskData->inputs[2]);
+
+    std::copy(A_input, A_input + n * n, A_.begin());
+    std::copy(B_input, B_input + n * n, B_.begin());
+
+    calculate_distribution_a(n, world.size(), sizes_a, displs_a);
+    calculate_distribution_b(n, world.size(), sizes_b, displs_b);
+  }
+  return true;
+}
+
+bool nasedkin_e_strassen_algorithm_mpi::StrassenParallel::validation() {
+  internal_order_test();
+
+  if (world.rank() == 0) {
+    if (taskData->inputs_count.size() != 3 || taskData->outputs_count.size() != 1) {
+      return false;
+    }
+
+    n = *reinterpret_cast<size_t*>(taskData->inputs[0]);
+    if (n <= 0) {
+      return false;
     }
   }
   return true;
 }
 
-std::vector<std::vector<double>> StrassenAlgorithmMPI::add(const std::vector<std::vector<double>>& A,
-                                                           const std::vector<std::vector<double>>& B) {
-  int n = A.size();
-  std::vector<std::vector<double>> C(n, std::vector<double>(n));
-  for (int i = 0; i < n; ++i)
-    for (int j = 0; j < n; ++j)
-      C[i][j] = A[i][j] + B[i][j];
-  return C;
+bool nasedkin_e_strassen_algorithm_mpi::StrassenParallel::run() {
+  internal_order_test();
+  std::vector<double> local_C;
+
+  boost::mpi::broadcast(world, sizes_a, 0);
+  boost::mpi::broadcast(world, sizes_b, 0);
+  boost::mpi::broadcast(world, displs_b, 0);
+  boost::mpi::broadcast(world, n, 0);
+
+  int loc_mat_size = sizes_a[world.rank()];
+  int loc_vec_size = sizes_b[world.rank()];
+
+  local_A.resize(loc_mat_size);
+  local_B.resize(loc_vec_size);
+  local_C.resize(sizes_b[world.rank()]);
+
+  if (world.rank() == 0) {
+    boost::mpi::scatterv(world, A_.data(), sizes_a, displs_a, local_A.data(), loc_mat_size, 0);
+    boost::mpi::scatterv(world, B_.data(), sizes_b, displs_b, local_B.data(), loc_vec_size, 0);
+  } else {
+    boost::mpi::scatterv(world, local_A.data(), loc_mat_size, 0);
+    boost::mpi::scatterv(world, local_B.data(), loc_vec_size, 0);
+  }
+
+  strassen_multiply_parallel(local_A, local_B, local_C, n);
+
+  if (world.rank() == 0) {
+    boost::mpi::gatherv(world, local_C.data(), sizes_b[world.rank()], C_.data(), sizes_b, displs_b, 0);
+  } else {
+    boost::mpi::gatherv(world, local_C.data(), sizes_b[world.rank()], 0);
+  }
+
+  return true;
 }
 
-std::vector<std::vector<double>> StrassenAlgorithmMPI::subtract(const std::vector<std::vector<double>>& A,
-                                                                const std::vector<std::vector<double>>& B) {
-  int n = A.size();
-  std::vector<std::vector<double>> C(n, std::vector<double>(n));
-  for (int i = 0; i < n; ++i)
-    for (int j = 0; j < n; ++j)
-      C[i][j] = A[i][j] - B[i][j];
-  return C;
+bool nasedkin_e_strassen_algorithm_mpi::StrassenParallel::post_processing() {
+  internal_order_test();
+  if (world.rank() == 0) {
+    for (size_t i = 0; i < C_.size(); ++i) {
+      reinterpret_cast<double*>(taskData->outputs[0])[i] = C_[i];
+    }
+  }
+  return true;
 }
 
-void StrassenAlgorithmMPI::split_matrix(const std::vector<std::vector<double>>& matrix,
-                                        std::vector<std::vector<double>>& A11,
-                                        std::vector<std::vector<double>>& A12,
-                                        std::vector<std::vector<double>>& A21,
-                                        std::vector<std::vector<double>>& A22) {
-  int n = matrix.size() / 2;
-  A11.resize(n, std::vector<double>(n));
-  A12.resize(n, std::vector<double>(n));
-  A21.resize(n, std::vector<double>(n));
-  A22.resize(n, std::vector<double>(n));
-  for (int i = 0; i < n; ++i) {
-    for (int j = 0; j < n; ++j) {
-      A11[i][j] = matrix[i][j];
-      A12[i][j] = matrix[i][j + n];
-      A21[i][j] = matrix[i + n][j];
-      A22[i][j] = matrix[i + n][j + n];
+void nasedkin_e_strassen_algorithm_mpi::StrassenParallel::strassen_multiply_parallel(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, size_t n) {
+  if (n <= 64) {
+    for (size_t i = 0; i < n; ++i) {
+      for (size_t j = 0; j < n; ++j) {
+        C[i * n + j] = 0;
+        for (size_t k = 0; k < n; ++k) {
+          C[i * n + j] += A[i * n + k] * B[k * n + j];
+        }
+      }
+    }
+    return;
+  }
+
+  size_t m = n / 2;
+  std::vector<double> A11(m * m), A12(m * m), A21(m * m), A22(m * m);
+  std::vector<double> B11(m * m), B12(m * m), B21(m * m), B22(m * m);
+  std::vector<double> C11(m * m), C12(m * m), C21(m * m), C22(m * m);
+  std::vector<double> M1(m * m), M2(m * m), M3(m * m), M4(m * m), M5(m * m), M6(m * m), M7(m * m);
+  std::vector<double> temp1(m * m), temp2(m * m);
+
+  for (size_t i = 0; i < m; ++i) {
+    for (size_t j = 0; j < m; ++j) {
+      A11[i * m + j] = A[i * n + j];
+      A12[i * m + j] = A[i * n + j + m];
+      A21[i * m + j] = A[(i + m) * n + j];
+      A22[i * m + j] = A[(i + m) * n + j + m];
+
+      B11[i * m + j] = B[i * n + j];
+      B12[i * m + j] = B[i * n + j + m];
+      B21[i * m + j] = B[(i + m) * n + j];
+      B22[i * m + j] = B[(i + m) * n + j + m];
+    }
+  }
+
+  // M1 = (A11 + A22) * (B11 + B22)
+  std::vector<double> A11_plus_A22(m * m), B11_plus_B22(m * m);
+  for (size_t i = 0; i < m * m; ++i) {
+    A11_plus_A22[i] = A11[i] + A22[i];
+    B11_plus_B22[i] = B11[i] + B22[i];
+  }
+  strassen_multiply_parallel(A11_plus_A22, B11_plus_B22, M1, m);
+
+  // M2 = (A21 + A22) * B11
+  std::vector<double> A21_plus_A22(m * m);
+  for (size_t i = 0; i < m * m; ++i) {
+    A21_plus_A22[i] = A21[i] + A22[i];
+  }
+  strassen_multiply_parallel(A21_plus_A22, B11, M2, m);
+
+  // M3 = A11 * (B12 - B22)
+  std::vector<double> B12_minus_B22(m * m);
+  for (size_t i = 0; i < m * m; ++i) {
+    B12_minus_B22[i] = B12[i] - B22[i];
+  }
+  strassen_multiply_parallel(A11, B12_minus_B22, M3, m);
+
+  // M4 = A22 * (B21 - B11)
+  std::vector<double> B21_minus_B11(m * m);
+  for (size_t i = 0; i < m * m; ++i) {
+    B21_minus_B11[i] = B21[i] - B11[i];
+  }
+  strassen_multiply_parallel(A22, B21_minus_B11, M4, m);
+
+  // M5 = (A11 + A12) * B22
+  std::vector<double> A11_plus_A12(m * m);
+  for (size_t i = 0; i < m * m; ++i) {
+    A11_plus_A12[i] = A11[i] + A12[i];
+  }
+  strassen_multiply_parallel(A11_plus_A12, B22, M5, m);
+
+  // M6 = (A21 - A11) * (B11 + B12)
+  std::vector<double> A21_minus_A11(m * m), B11_plus_B12(m * m);
+  for (size_t i = 0; i < m * m; ++i) {
+    A21_minus_A11[i] = A21[i] - A11[i];
+    B11_plus_B12[i] = B11[i] + B12[i];
+  }
+  strassen_multiply_parallel(A21_minus_A11, B11_plus_B12, M6, m);
+
+  // M7 = (A12 - A22) * (B21 + B22)
+  std::vector<double> A12_minus_A22(m * m), B21_plus_B22(m * m);
+  for (size_t i = 0; i < m * m; ++i) {
+    A12_minus_A22[i] = A12[i] - A22[i];
+    B21_plus_B22[i] = B21[i] + B22[i];
+  }
+  strassen_multiply_parallel(A12_minus_A22, B21_plus_B22, M7, m);
+
+  // C11 = M1 + M4 - M5 + M7
+  for (size_t i = 0; i < m * m; ++i) {
+    C11[i] = M1[i] + M4[i] - M5[i] + M7[i];
+  }
+
+  // C12 = M3 + M5
+  for (size_t i = 0; i < m * m; ++i) {
+    C12[i] = M3[i] + M5[i];
+  }
+
+  // C21 = M2 + M4
+  for (size_t i = 0; i < m * m; ++i) {
+    C21[i] = M2[i] + M4[i];
+  }
+
+  // C22 = M1 - M2 + M3 + M6
+  for (size_t i = 0; i < m * m; ++i) {
+    C22[i] = M1[i] - M2[i] + M3[i] + M6[i];
+  }
+
+  for (size_t i = 0; i < m; ++i) {
+    for (size_t j = 0; j < m; ++j) {
+      C[i * n + j] = C11[i * m + j];
+      C[i * n + j + m] = C12[i * m + j];
+      C[(i + m) * n + j] = C21[i * m + j];
+      C[(i + m) * n + j + m] = C22[i * m + j];
     }
   }
 }
 
-std::vector<std::vector<double>> StrassenAlgorithmMPI::merge_matrices(const std::vector<std::vector<double>>& C11,
-                                                                      const std::vector<std::vector<double>>& C12,
-                                                                      const std::vector<std::vector<double>>& C21,
-                                                                      const std::vector<std::vector<double>>& C22) {
-  int n = C11.size();
-  std::vector<std::vector<double>> C(2 * n, std::vector<double>(2 * n));
-  for (int i = 0; i < n; ++i) {
-    for (int j = 0; j < n; ++j) {
-      C[i][j] = C11[i][j];
-      C[i][j + n] = C12[i][j];
-      C[i + n][j] = C21[i][j];
-      C[i + n][j + n] = C22[i][j];
+void nasedkin_e_strassen_algorithm_mpi::StrassenParallel::calculate_distribution_a(int rows, int num_proc, std::vector<int>& sizes, std::vector<int>& displs) {
+  sizes.resize(num_proc, 0);
+  displs.resize(num_proc, -1);
+
+  if (num_proc > rows) {
+    for (int i = 0; i < rows; ++i) {
+      sizes[i] = rows;
+      displs[i] = i * rows;
+    }
+  } else {
+    int a = rows / num_proc;
+    int b = rows % num_proc;
+
+    int offset = 0;
+    for (int i = 0; i < num_proc; ++i) {
+      if (b-- > 0) {
+        sizes[i] = (a + 1) * rows;
+      } else {
+        sizes[i] = a * rows;
+      }
+      displs[i] = offset;
+      offset += sizes[i];
     }
   }
-  return C;
 }
 
-std::vector<std::vector<double>> StrassenAlgorithmMPI::strassen_multiply(const std::vector<std::vector<double>>& A,
-                                                                         const std::vector<std::vector<double>>& B) {
-  int n = A.size();
-  if (n <= 2) {
-    return add(A, B);
+void nasedkin_e_strassen_algorithm_mpi::StrassenParallel::calculate_distribution_b(int rows, int num_proc, std::vector<int>& sizes, std::vector<int>& displs) {
+  sizes.resize(num_proc, 0);
+  displs.resize(num_proc, -1);
+
+  if (num_proc > rows) {
+    for (int i = 0; i < rows; ++i) {
+      sizes[i] = 1;
+      displs[i] = i;
+    }
+  } else {
+    int a = rows / num_proc;
+    int b = rows % num_proc;
+
+    int offset = 0;
+    for (int i = 0; i < num_proc; ++i) {
+      if (b-- > 0) {
+        sizes[i] = (a + 1);
+      } else {
+        sizes[i] = a;
+      }
+      displs[i] = offset;
+      offset += sizes[i];
+    }
   }
-
-  std::vector<std::vector<double>> A11;
-  std::vector<std::vector<double>> A12;
-  std::vector<std::vector<double>> A21;
-  std::vector<std::vector<double>> A22;
-  std::vector<std::vector<double>> B11;
-  std::vector<std::vector<double>> B12;
-  std::vector<std::vector<double>> B21;
-  std::vector<std::vector<double>> B22;
-  split_matrix(A, A11, A12, A21, A22);
-  split_matrix(B, B11, B12, B21, B22);
-
-  auto P1 = strassen_multiply(add(A11, A22), add(B11, B22));
-  auto P2 = strassen_multiply(add(A21, A22), B11);
-  auto P3 = strassen_multiply(A11, subtract(B12, B22));
-  auto P4 = strassen_multiply(A22, subtract(B21, B11));
-
-  auto C11 = add(P1, P4);
-  auto C12 = add(P3, P2);
-  auto C21 = add(P2, P4);
-  auto C22 = subtract(P1, P3);
-
-  return merge_matrices(C11, C12, C21, C22);
 }
-
-}  // namespace nasedkin_e_strassen_algorithm
