@@ -7,6 +7,7 @@
 #include "mpi/nasedkin_e_strassen_algorithm/src/ops_mpi.cpp"
 
 TEST(nasedkin_e_strassen_algorithm_mpi, test_pipeline_run) {
+
     auto taskData = std::make_shared<ppc::core::TaskData>();
     taskData->inputs_count.push_back(8);
 
@@ -32,6 +33,7 @@ TEST(nasedkin_e_strassen_algorithm_mpi, test_pipeline_run) {
 }
 
 TEST(nasedkin_e_strassen_algorithm_mpi, test_task_run) {
+
     auto taskData = std::make_shared<ppc::core::TaskData>();
     taskData->inputs_count.push_back(8);
 
