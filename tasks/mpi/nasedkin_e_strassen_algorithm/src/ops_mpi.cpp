@@ -177,6 +177,7 @@ bool StrassenAlgorithmMPIParallel::pre_processing() {
   internal_order_test();
   sizes_a.resize(world.size());
   displs_a.resize(world.size());
+  boost::mpi::communicator world;
 
   if (world.rank() == 0) {
     n = *reinterpret_cast<size_t*>(taskData->inputs[0]);
@@ -220,38 +221,35 @@ bool StrassenAlgorithmMPIParallel::validation() {
 
 bool StrassenAlgorithmMPIParallel::run() {
   internal_order_test();
+  boost::mpi::communicator world;
 
-  // Передача размера матрицы
+  boost::mpi::broadcast(world, sizes_a, 0);
+  boost::mpi::broadcast(world, displs_a, 0);
   boost::mpi::broadcast(world, n, 0);
 
-  // Определение локальных размеров и смещений для разбиения
-  calculate_distribution(n, world.size(), sizes_a, displs_a);
-
-  // Распределение подматриц
   int loc_size = sizes_a[world.rank()];
   local_A.resize(loc_size, std::vector<double>(n, 0.0));
   local_B.resize(loc_size, std::vector<double>(n, 0.0));
   local_C.resize(loc_size, std::vector<double>(n, 0.0));
 
+  // Отправка и получение данных с использованием объекта communicator
   if (world.rank() == 0) {
-    // Рассылка данных
     for (int i = 0; i < world.size(); ++i) {
       for (int j = 0; j < sizes_a[i]; ++j) {
-        local_A[j] = std::vector<double>(A_[displs_a[i] + j].begin(), A_[displs_a[i] + j].end());
-        local_B[j] = std::vector<double>(B_[displs_a[i] + j].begin(), B_[displs_a[i] + j].end());
+        for (size_t k = 0; k < n; ++k) {
+          local_A[j][k] = A_[displs_a[i] + j][k];
+          local_B[j][k] = B_[displs_a[i] + j][k];
+        }
       }
-      if (i != 0) {
-        world.send(i, 0, local_A);
-        world.send(i, 1, local_B);
-      }
+      world.send(i, 0, local_A);
+      world.send(i, 1, local_B);
     }
   } else {
-    // Получение данных
     world.recv(0, 0, local_A);
     world.recv(0, 1, local_B);
   }
 
-  // Локальное умножение матриц
+  // Выполнение локального умножения матриц
   for (int i = 0; i < loc_size; ++i) {
     for (size_t j = 0; j < n; ++j) {
       for (size_t k = 0; k < n; ++k) {
@@ -261,17 +259,11 @@ bool StrassenAlgorithmMPIParallel::run() {
   }
 
   if (world.rank() == 0) {
-    // Сбор результатов
     for (int i = 0; i < world.size(); ++i) {
-      if (i != 0) {
-        std::vector<std::vector<double>> recv_C(sizes_a[i], std::vector<double>(n, 0.0));
-        world.recv(i, 2, recv_C);
-        for (int j = 0; j < sizes_a[i]; ++j) {
-          C_[displs_a[i] + j] = recv_C[j];
-        }
-      } else {
-        for (int j = 0; j < loc_size; ++j) {
-          C_[displs_a[i] + j] = local_C[j];
+      world.recv(i, 2, local_C);
+      for (int j = 0; j < sizes_a[i]; ++j) {
+        for (size_t k = 0; k < n; ++k) {
+          C_[displs_a[i] + j][k] = local_C[j][k];
         }
       }
     }
@@ -285,6 +277,7 @@ bool StrassenAlgorithmMPIParallel::run() {
 bool StrassenAlgorithmMPIParallel::post_processing() {
   internal_order_test();
   if (world.rank() == 0) {
+    boost::mpi::communicator world;
     auto* C_output = reinterpret_cast<double*>(taskData->outputs[0]);
     for (size_t i = 0; i < n; ++i) {
       for (size_t j = 0; j < n; ++j) {
@@ -298,15 +291,28 @@ bool StrassenAlgorithmMPIParallel::post_processing() {
 void StrassenAlgorithmMPIParallel::calculate_distribution(int rows, int num_proc,
                                                           std::vector<int>& sizes,
                                                           std::vector<int>& displs) {
-  sizes.resize(num_proc, rows / num_proc);
-  displs.resize(num_proc, 0);
+  sizes.resize(num_proc, 0);
+  displs.resize(num_proc, -1);
 
-  for (int i = 0; i < rows % num_proc; ++i) {
-    sizes[i]++;
-  }
+  if (num_proc > rows) {
+    for (int i = 0; i < rows; ++i) {
+      sizes[i] = 1;
+      displs[i] = i;
+    }
+  } else {
+    int a = rows / num_proc;
+    int b = rows % num_proc;
 
-  for (int i = 1; i < num_proc; ++i) {
-    displs[i] = displs[i - 1] + sizes[i - 1];
+    int offset = 0;
+    for (int i = 0; i < num_proc; ++i) {
+      if (b-- > 0) {
+        sizes[i] = a + 1;
+      } else {
+        sizes[i] = a;
+      }
+      displs[i] = offset;
+      offset += sizes[i];
+    }
   }
 }
 
