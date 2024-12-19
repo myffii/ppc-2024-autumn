@@ -165,13 +165,13 @@ void StrassenAlgorithmMPI::gather_result(const std::vector<std::vector<double>>&
   std::vector<int> displacements(num_processes);
 
   // calculate displacements for each process
-  for (int i = 0; i < num_processes; ++i) {
-    displacements[i] = i * size_per_process;
+  displacements[0] = 0;
+  for (int i = 1; i < num_processes; ++i) {
+    displacements[i] = displacements[i - 1] + counts[i - 1];
   }
 
-  globalC.resize(n, std::vector<double>(n));
-
-  boost::mpi::gatherv(localC.data(), size_per_process, globalC.data(), counts, displacements, 0, world);
+  boost::mpi::gatherv(world, localC.data(), size_per_process, globalC.data(),
+                      counts, displacements, 0);
 }
 
 }  // namespace nasedkin_e_strassen_algorithm

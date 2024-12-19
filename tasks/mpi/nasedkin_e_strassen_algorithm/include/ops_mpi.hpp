@@ -46,7 +46,7 @@ class StrassenAlgorithmMPI : public ppc::core::Task {
   gather_result(const std::vector<std::vector<double>>& localC,
                 std::vector<std::vector<double>>& globalC,
                 int rank, int num_processes);
-  split_matrix_for_processes(const std::vector<std::vector<double>>& matrix,
+  static split_matrix_for_processes(const std::vector<std::vector<double>>& matrix,
                              std::vector<std::vector<double>>& localMatrix,
                              int rank, int num_processes);
 };
