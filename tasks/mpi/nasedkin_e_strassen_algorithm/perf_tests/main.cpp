@@ -2,7 +2,7 @@
 #include <boost/mpi.hpp>
 #include <boost/mpi/collectives.hpp>
 #include <boost/mpi/timer.hpp>
-
+#include "mpi/nasedkin_e_strassen_algorithm/include/vector_serialization.hpp"
 #include "mpi/nasedkin_e_strassen_algorithm/include/ops_mpi.hpp"
 #include "core/perf/include/perf.hpp"
 
@@ -11,10 +11,6 @@ TEST(nasedkin_e_strassen_algorithm_mpi, perf_task_run) {
   boost::mpi::communicator world;
 
   int matrix_size = 8;
-  if (world.rank() == 0) {
-    std::cout << "Matrix size: " << matrix_size << std::endl;
-    std::cout << "Number of processes: " << world.size() << std::endl;
-  }
 
   auto taskData = std::make_shared<ppc::core::TaskData>();
   taskData->inputs_count.push_back(matrix_size);
