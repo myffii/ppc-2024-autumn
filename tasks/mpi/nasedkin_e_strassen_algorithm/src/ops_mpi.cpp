@@ -198,11 +198,6 @@ bool StrassenAlgorithmMPIParallel::pre_processing() {
     calculate_distribution(n, world.size(), sizes_a, displs_a);
   }
 
-  // Broadcasting sizes and displacements
-  boost::mpi::broadcast(world, sizes_a, 0);
-  boost::mpi::broadcast(world, displs_a, 0);
-  boost::mpi::broadcast(world, n, 0);
-
   return true;
 }
 
@@ -235,7 +230,7 @@ bool StrassenAlgorithmMPIParallel::run() {
   local_B.resize(loc_size, std::vector<double>(n, 0.0));
   local_C.resize(loc_size, std::vector<double>(n, 0.0));
 
-  // Corrected data sending and receiving using proper size and displacements
+  // Отправка и получение данных с использованием объекта communicator
   if (world.rank() == 0) {
     for (int i = 0; i < world.size(); ++i) {
       for (int j = 0; j < sizes_a[i]; ++j) {
@@ -244,15 +239,15 @@ bool StrassenAlgorithmMPIParallel::run() {
           local_B[j][k] = B_[displs_a[i] + j][k];
         }
       }
-      world.send(i, 0, local_A);  // Sending data for A
-      world.send(i, 1, local_B);  // Sending data for B
+      world.send(i, 0, local_A);  // Используйте world.send вместо boost::mpi::send
+      world.send(i, 1, local_B);  // Используйте world.send вместо boost::mpi::send
     }
   } else {
-    world.recv(0, 0, local_A);  // Receiving data for A
-    world.recv(0, 1, local_B);  // Receiving data for B
+    world.recv(0, 0, local_A);  // Используйте world.recv вместо boost::mpi::recv
+    world.recv(0, 1, local_B);  // Используйте world.recv вместо boost::mpi::recv
   }
 
-  // Local matrix multiplication for each rank
+  // Выполнение локального умножения матриц
   for (int i = 0; i < loc_size; ++i) {
     for (size_t j = 0; j < n; ++j) {
       for (size_t k = 0; k < n; ++k) {
@@ -263,7 +258,7 @@ bool StrassenAlgorithmMPIParallel::run() {
 
   if (world.rank() == 0) {
     for (int i = 0; i < world.size(); ++i) {
-      world.recv(i, 2, local_C);  // Receiving computed data from other processes
+      world.recv(i, 2, local_C);  // Используйте world.recv вместо boost::mpi::recv
       for (int j = 0; j < sizes_a[i]; ++j) {
         for (size_t k = 0; k < n; ++k) {
           C_[displs_a[i] + j][k] = local_C[j][k];
@@ -271,12 +266,11 @@ bool StrassenAlgorithmMPIParallel::run() {
       }
     }
   } else {
-    world.send(0, 2, local_C);  // Sending computed data back to rank 0
+    world.send(0, 2, local_C);  // Используйте world.send вместо boost::mpi::send
   }
 
   return true;
 }
-
 
 bool StrassenAlgorithmMPIParallel::post_processing() {
   internal_order_test();
@@ -295,14 +289,27 @@ void StrassenAlgorithmMPIParallel::calculate_distribution(int rows, int num_proc
                                                           std::vector<int>& sizes,
                                                           std::vector<int>& displs) {
   sizes.resize(num_proc, 0);
-  displs.resize(num_proc, 0);
+  displs.resize(num_proc, -1);
 
-  int base = rows / num_proc;
-  int extra = rows % num_proc;
+  if (num_proc > rows) {
+    for (int i = 0; i < rows; ++i) {
+      sizes[i] = 1;
+      displs[i] = i;
+    }
+  } else {
+    int a = rows / num_proc;
+    int b = rows % num_proc;
 
-  for (int i = 0; i < num_proc; ++i) {
-    sizes[i] = base + (i < extra ? 1 : 0);
-    displs[i] = i > 0 ? displs[i-1] + sizes[i-1] : 0;
+    int offset = 0;
+    for (int i = 0; i < num_proc; ++i) {
+      if (b-- > 0) {
+        sizes[i] = a + 1;
+      } else {
+        sizes[i] = a;
+      }
+      displs[i] = offset;
+      offset += sizes[i];
+    }
   }
 }
 
