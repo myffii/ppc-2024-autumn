@@ -35,11 +35,7 @@ bool nasedkin_e_strassen_algorithm_mpi::StrassenSequential::validation() {
   }
 
   n = *reinterpret_cast<size_t*>(taskData->inputs[0]);
-  if (n <= 0) {
-    return false;
-  }
-
-  return true;
+  return n > 0;  // Исправлено: упрощено условие
 }
 
 bool nasedkin_e_strassen_algorithm_mpi::StrassenSequential::run() {
@@ -70,11 +66,31 @@ void nasedkin_e_strassen_algorithm_mpi::StrassenSequential::strassen_multiply(co
   }
 
   size_t m = n / 2;
-  std::vector<double> A11(m * m), A12(m * m), A21(m * m), A22(m * m);
-  std::vector<double> B11(m * m), B12(m * m), B21(m * m), B22(m * m);
-  std::vector<double> C11(m * m), C12(m * m), C21(m * m), C22(m * m);
-  std::vector<double> M1(m * m), M2(m * m), M3(m * m), M4(m * m), M5(m * m), M6(m * m), M7(m * m);
-  std::vector<double> temp1(m * m), temp2(m * m);
+  std::vector<double> A11(m * m);  // Исправлено: отдельные объявления
+  std::vector<double> A12(m * m);
+  std::vector<double> A21(m * m);
+  std::vector<double> A22(m * m);
+
+  std::vector<double> B11(m * m);  // Исправлено: отдельные объявления
+  std::vector<double> B12(m * m);
+  std::vector<double> B21(m * m);
+  std::vector<double> B22(m * m);
+
+  std::vector<double> C11(m * m);  // Исправлено: отдельные объявления
+  std::vector<double> C12(m * m);
+  std::vector<double> C21(m * m);
+  std::vector<double> C22(m * m);
+
+  std::vector<double> M1(m * m);  // Исправлено: отдельные объявления
+  std::vector<double> M2(m * m);
+  std::vector<double> M3(m * m);
+  std::vector<double> M4(m * m);
+  std::vector<double> M5(m * m);
+  std::vector<double> M6(m * m);
+  std::vector<double> M7(m * m);
+
+  std::vector<double> temp1(m * m);  // Исправлено: отдельные объявления
+  std::vector<double> temp2(m * m);
 
   for (size_t i = 0; i < m; ++i) {
     for (size_t j = 0; j < m; ++j) {
@@ -91,7 +107,8 @@ void nasedkin_e_strassen_algorithm_mpi::StrassenSequential::strassen_multiply(co
   }
 
   // M1 = (A11 + A22) * (B11 + B22)
-  std::vector<double> A11_plus_A22(m * m), B11_plus_B22(m * m);
+  std::vector<double> A11_plus_A22(m * m);  // Исправлено: отдельные объявления
+  std::vector<double> B11_plus_B22(m * m);
   for (size_t i = 0; i < m * m; ++i) {
     A11_plus_A22[i] = A11[i] + A22[i];
     B11_plus_B22[i] = B11[i] + B22[i];
@@ -127,7 +144,8 @@ void nasedkin_e_strassen_algorithm_mpi::StrassenSequential::strassen_multiply(co
   strassen_multiply(A11_plus_A12, B22, M5, m);
 
   // M6 = (A21 - A11) * (B11 + B12)
-  std::vector<double> A21_minus_A11(m * m), B11_plus_B12(m * m);
+  std::vector<double> A21_minus_A11(m * m);
+  std::vector<double> B11_plus_B12(m * m);
   for (size_t i = 0; i < m * m; ++i) {
     A21_minus_A11[i] = A21[i] - A11[i];
     B11_plus_B12[i] = B11[i] + B12[i];
@@ -135,7 +153,8 @@ void nasedkin_e_strassen_algorithm_mpi::StrassenSequential::strassen_multiply(co
   strassen_multiply(A21_minus_A11, B11_plus_B12, M6, m);
 
   // M7 = (A12 - A22) * (B21 + B22)
-  std::vector<double> A12_minus_A22(m * m), B21_plus_B22(m * m);
+  std::vector<double> A12_minus_A22(m * m);
+  std::vector<double> B21_plus_B22(m * m);
   for (size_t i = 0; i < m * m; ++i) {
     A12_minus_A22[i] = A12[i] - A22[i];
     B21_plus_B22[i] = B21[i] + B22[i];
@@ -208,9 +227,7 @@ bool nasedkin_e_strassen_algorithm_mpi::StrassenParallel::validation() {
     }
 
     n = *reinterpret_cast<size_t*>(taskData->inputs[0]);
-    if (n <= 0) {
-      return false;
-    }
+    return n > 0;  // Исправлено: упрощено условие
   }
   return true;
 }
@@ -274,11 +291,31 @@ void nasedkin_e_strassen_algorithm_mpi::StrassenParallel::strassen_multiply_para
   }
 
   size_t m = n / 2;
-  std::vector<double> A11(m * m), A12(m * m), A21(m * m), A22(m * m);
-  std::vector<double> B11(m * m), B12(m * m), B21(m * m), B22(m * m);
-  std::vector<double> C11(m * m), C12(m * m), C21(m * m), C22(m * m);
-  std::vector<double> M1(m * m), M2(m * m), M3(m * m), M4(m * m), M5(m * m), M6(m * m), M7(m * m);
-  std::vector<double> temp1(m * m), temp2(m * m);
+  std::vector<double> A11(m * m);  // Исправлено: отдельные объявления
+  std::vector<double> A12(m * m);
+  std::vector<double> A21(m * m);
+  std::vector<double> A22(m * m);
+
+  std::vector<double> B11(m * m);  // Исправлено: отдельные объявления
+  std::vector<double> B12(m * m);
+  std::vector<double> B21(m * m);
+  std::vector<double> B22(m * m);
+
+  std::vector<double> C11(m * m);  // Исправлено: отдельные объявления
+  std::vector<double> C12(m * m);
+  std::vector<double> C21(m * m);
+  std::vector<double> C22(m * m);
+
+  std::vector<double> M1(m * m);  // Исправлено: отдельные объявления
+  std::vector<double> M2(m * m);
+  std::vector<double> M3(m * m);
+  std::vector<double> M4(m * m);
+  std::vector<double> M5(m * m);
+  std::vector<double> M6(m * m);
+  std::vector<double> M7(m * m);
+
+  std::vector<double> temp1(m * m);  // Исправлено: отдельные объявления
+  std::vector<double> temp2(m * m);
 
   for (size_t i = 0; i < m; ++i) {
     for (size_t j = 0; j < m; ++j) {
@@ -295,7 +332,8 @@ void nasedkin_e_strassen_algorithm_mpi::StrassenParallel::strassen_multiply_para
   }
 
   // M1 = (A11 + A22) * (B11 + B22)
-  std::vector<double> A11_plus_A22(m * m), B11_plus_B22(m * m);
+  std::vector<double> A11_plus_A22(m * m);  // Исправлено: отдельные объявления
+  std::vector<double> B11_plus_B22(m * m);
   for (size_t i = 0; i < m * m; ++i) {
     A11_plus_A22[i] = A11[i] + A22[i];
     B11_plus_B22[i] = B11[i] + B22[i];
@@ -331,7 +369,8 @@ void nasedkin_e_strassen_algorithm_mpi::StrassenParallel::strassen_multiply_para
   strassen_multiply_parallel(A11_plus_A12, B22, M5, m);
 
   // M6 = (A21 - A11) * (B11 + B12)
-  std::vector<double> A21_minus_A11(m * m), B11_plus_B12(m * m);
+  std::vector<double> A21_minus_A11(m * m);
+  std::vector<double> B11_plus_B12(m * m);
   for (size_t i = 0; i < m * m; ++i) {
     A21_minus_A11[i] = A21[i] - A11[i];
     B11_plus_B12[i] = B11[i] + B12[i];
@@ -339,7 +378,8 @@ void nasedkin_e_strassen_algorithm_mpi::StrassenParallel::strassen_multiply_para
   strassen_multiply_parallel(A21_minus_A11, B11_plus_B12, M6, m);
 
   // M7 = (A12 - A22) * (B21 + B22)
-  std::vector<double> A12_minus_A22(m * m), B21_plus_B22(m * m);
+  std::vector<double> A12_minus_A22(m * m);
+  std::vector<double> B21_plus_B22(m * m);
   for (size_t i = 0; i < m * m; ++i) {
     A12_minus_A22[i] = A12[i] - A22[i];
     B21_plus_B22[i] = B21[i] + B22[i];
