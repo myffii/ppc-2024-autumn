@@ -12,7 +12,7 @@
 
 namespace nasedkin_e_strassen_algorithm_mpi {
 
-    void StrassenAlgorithmSequential::strassenMultiply(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, size_t n) {
+    void nasedkin_e_strassen_algorithm_mpi::StrassenAlgorithmSequential::strassenMultiply(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, size_t n) {
         if (n <= 64) {
             // Base case: use standard matrix multiplication
             for (size_t i = 0; i < n; ++i) {
@@ -28,13 +28,34 @@ namespace nasedkin_e_strassen_algorithm_mpi {
 
         size_t half = n / 2;
 
-        std::vector<double> A11(half * half), A12(half * half), A21(half * half), A22(half * half);
-        std::vector<double> B11(half * half), B12(half * half), B21(half * half), B22(half * half);
-        std::vector<double> C11(half * half), C12(half * half), C21(half * half), C22(half * half);
-        std::vector<double> M1(half * half), M2(half * half), M3(half * half), M4(half * half), M5(half * half), M6(half * half), M7(half * half);
-        std::vector<double> temp1(half * half), temp2(half * half);
-
         // Divide matrices A and B into 4 submatrices
+        std::vector<double> A11(half * half);
+        std::vector<double> A12(half * half);
+        std::vector<double> A21(half * half);
+        std::vector<double> A22(half * half);
+
+        std::vector<double> B11(half * half);
+        std::vector<double> B12(half * half);
+        std::vector<double> B21(half * half);
+        std::vector<double> B22(half * half);
+
+        std::vector<double> C11(half * half);
+        std::vector<double> C12(half * half);
+        std::vector<double> C21(half * half);
+        std::vector<double> C22(half * half);
+
+        std::vector<double> M1(half * half);
+        std::vector<double> M2(half * half);
+        std::vector<double> M3(half * half);
+        std::vector<double> M4(half * half);
+        std::vector<double> M5(half * half);
+        std::vector<double> M6(half * half);
+        std::vector<double> M7(half * half);
+
+        std::vector<double> temp1(half * half);
+        std::vector<double> temp2(half * half);
+
+        // Fill submatrices
         for (size_t i = 0; i < half; ++i) {
             for (size_t j = 0; j < half; ++j) {
                 A11[i * half + j] = A[i * n + j];
@@ -104,7 +125,7 @@ namespace nasedkin_e_strassen_algorithm_mpi {
         }
     }
 
-    void StrassenAlgorithmSequential::addMatrices(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, size_t n) {
+    void nasedkin_e_strassen_algorithm_mpi::StrassenAlgorithmSequential::addMatrices(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, size_t n) {
         for (size_t i = 0; i < n; ++i) {
             for (size_t j = 0; j < n; ++j) {
                 C[i * n + j] = A[i * n + j] + B[i * n + j];
@@ -112,7 +133,7 @@ namespace nasedkin_e_strassen_algorithm_mpi {
         }
     }
 
-    void StrassenAlgorithmSequential::subtractMatrices(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, size_t n) {
+    void nasedkin_e_strassen_algorithm_mpi::StrassenAlgorithmSequential::subtractMatrices(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, size_t n) {
         for (size_t i = 0; i < n; ++i) {
             for (size_t j = 0; j < n; ++j) {
                 C[i * n + j] = A[i * n + j] - B[i * n + j];
@@ -120,7 +141,7 @@ namespace nasedkin_e_strassen_algorithm_mpi {
         }
     }
 
-    bool StrassenAlgorithmSequential::pre_processing() {
+    bool nasedkin_e_strassen_algorithm_mpi::StrassenAlgorithmSequential::pre_processing() {
         n = *reinterpret_cast<size_t*>(taskData->inputs[0]);
 
         A_.assign(n * n, 0.0);
@@ -136,7 +157,7 @@ namespace nasedkin_e_strassen_algorithm_mpi {
         return true;
     }
 
-    bool StrassenAlgorithmSequential::validation() {
+    bool nasedkin_e_strassen_algorithm_mpi::StrassenAlgorithmSequential::validation() {
         if (taskData->inputs_count.size() != 3 || taskData->outputs_count.size() != 1) {
             return false;
         }
@@ -149,19 +170,19 @@ namespace nasedkin_e_strassen_algorithm_mpi {
         return true;
     }
 
-    bool StrassenAlgorithmSequential::run() {
+    bool nasedkin_e_strassen_algorithm_mpi::StrassenAlgorithmSequential::run() {
         strassenMultiply(A_, B_, C_, n);
         return true;
     }
 
-    bool StrassenAlgorithmSequential::post_processing() {
+    bool nasedkin_e_strassen_algorithm_mpi::StrassenAlgorithmSequential::post_processing() {
         for (size_t i = 0; i < n * n; ++i) {
             reinterpret_cast<double*>(taskData->outputs[0])[i] = C_[i];
         }
         return true;
     }
 
-    void StrassenAlgorithmParallel::calculate_distribution(int len, int num_proc, std::vector<int>& sizes, std::vector<int>& displs) {
+    void nasedkin_e_strassen_algorithm_mpi::StrassenAlgorithmParallel::calculate_distribution(int len, int num_proc, std::vector<int>& sizes, std::vector<int>& displs) {
         sizes.resize(num_proc, 0);
         displs.resize(num_proc, -1);
 
@@ -180,7 +201,7 @@ namespace nasedkin_e_strassen_algorithm_mpi {
         }
     }
 
-    bool StrassenAlgorithmParallel::pre_processing() {
+    bool nasedkin_e_strassen_algorithm_mpi::StrassenAlgorithmParallel::pre_processing() {
         sizes_a.resize(world.size());
         displs_a.resize(world.size());
 
@@ -211,7 +232,7 @@ namespace nasedkin_e_strassen_algorithm_mpi {
         return true;
     }
 
-    bool StrassenAlgorithmParallel::validation() {
+    bool nasedkin_e_strassen_algorithm_mpi::StrassenAlgorithmParallel::validation() {
         if (world.rank() == 0) {
             if (taskData->inputs_count.size() != 3 || taskData->outputs_count.size() != 1) {
                 return false;
@@ -228,7 +249,7 @@ namespace nasedkin_e_strassen_algorithm_mpi {
         return true;
     }
 
-    bool StrassenAlgorithmParallel::run() {
+    bool nasedkin_e_strassen_algorithm_mpi::StrassenAlgorithmParallel::run() {
         if (world.rank() == 0) {
             boost::mpi::scatterv(world, A_.data(), sizes_a, displs_a, local_A.data(), sizes_a[world.rank()], 0);
             boost::mpi::scatterv(world, B_.data(), sizes_a, displs_a, local_B.data(), sizes_a[world.rank()], 0);
@@ -249,7 +270,7 @@ namespace nasedkin_e_strassen_algorithm_mpi {
         return true;
     }
 
-    bool StrassenAlgorithmParallel::post_processing() {
+    bool nasedkin_e_strassen_algorithm_mpi::StrassenAlgorithmParallel::post_processing() {
         if (world.rank() == 0) {
             for (size_t i = 0; i < n * n; ++i) {
                 reinterpret_cast<double*>(taskData->outputs[0])[i] = C_[i];
