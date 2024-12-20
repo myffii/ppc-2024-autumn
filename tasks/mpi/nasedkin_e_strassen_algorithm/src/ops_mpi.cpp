@@ -193,7 +193,6 @@ bool StrassenAlgorithmParallel::pre_processing() {
   return true;
 }
 
-
 bool StrassenAlgorithmParallel::validation() {
   internal_order_test();
 
