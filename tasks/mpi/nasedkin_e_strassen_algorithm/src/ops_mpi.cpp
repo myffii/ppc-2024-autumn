@@ -258,6 +258,9 @@ namespace nasedkin_e_strassen_algorithm_mpi {
             boost::mpi::scatterv(world, A_.data(), sizes_a, displs_a, local_A.data(), sizes_a[world.rank()], 0);
             boost::mpi::scatterv(world, B_.data(), sizes_a, displs_a, local_B.data(), sizes_a[world.rank()], 0);
         } else {
+            // Ensure local_A and local_B are resized before scattering
+            local_A.resize(sizes_a[world.rank()]);
+            local_B.resize(sizes_a[world.rank()]);
             boost::mpi::scatterv(world, local_A.data(), sizes_a[world.rank()], 0);
             boost::mpi::scatterv(world, local_B.data(), sizes_a[world.rank()], 0);
         }
