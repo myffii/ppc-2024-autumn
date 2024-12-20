@@ -12,7 +12,7 @@
 
 namespace nasedkin_e_strassen_algorithm_mpi {
 
-    void nasedkin_e_strassen_algorithm_mpi::StrassenAlgorithmSequential::strassenMultiply(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, size_t n) {
+    void StrassenAlgorithmSequential::strassenMultiply(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, size_t n) {
         if (n <= 64) {
             // Base case: use standard matrix multiplication
             for (size_t i = 0; i < n; ++i) {
@@ -125,7 +125,7 @@ namespace nasedkin_e_strassen_algorithm_mpi {
         }
     }
 
-    void nasedkin_e_strassen_algorithm_mpi::StrassenAlgorithmSequential::addMatrices(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, size_t n) {
+    void StrassenAlgorithmSequential::addMatrices(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, size_t n) {
         for (size_t i = 0; i < n; ++i) {
             for (size_t j = 0; j < n; ++j) {
                 C[i * n + j] = A[i * n + j] + B[i * n + j];
@@ -133,7 +133,7 @@ namespace nasedkin_e_strassen_algorithm_mpi {
         }
     }
 
-    void nasedkin_e_strassen_algorithm_mpi::StrassenAlgorithmSequential::subtractMatrices(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, size_t n) {
+    void StrassenAlgorithmSequential::subtractMatrices(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, size_t n) {
         for (size_t i = 0; i < n; ++i) {
             for (size_t j = 0; j < n; ++j) {
                 C[i * n + j] = A[i * n + j] - B[i * n + j];
@@ -141,7 +141,7 @@ namespace nasedkin_e_strassen_algorithm_mpi {
         }
     }
 
-    bool nasedkin_e_strassen_algorithm_mpi::StrassenAlgorithmSequential::pre_processing() {
+    bool StrassenAlgorithmSequential::pre_processing() {
         n = *reinterpret_cast<size_t*>(taskData->inputs[0]);
 
         A_.assign(n * n, 0.0);
@@ -157,7 +157,7 @@ namespace nasedkin_e_strassen_algorithm_mpi {
         return true;
     }
 
-    bool nasedkin_e_strassen_algorithm_mpi::StrassenAlgorithmSequential::validation() {
+    bool StrassenAlgorithmSequential::validation() {
         if (taskData->inputs_count.size() != 3 || taskData->outputs_count.size() != 1) {
             return false;
         }
@@ -170,19 +170,19 @@ namespace nasedkin_e_strassen_algorithm_mpi {
         return true;
     }
 
-    bool nasedkin_e_strassen_algorithm_mpi::StrassenAlgorithmSequential::run() {
+    bool StrassenAlgorithmSequential::run() {
         strassenMultiply(A_, B_, C_, n);
         return true;
     }
 
-    bool nasedkin_e_strassen_algorithm_mpi::StrassenAlgorithmSequential::post_processing() {
+    bool StrassenAlgorithmSequential::post_processing() {
         for (size_t i = 0; i < n * n; ++i) {
             reinterpret_cast<double*>(taskData->outputs[0])[i] = C_[i];
         }
         return true;
     }
 
-    void nasedkin_e_strassen_algorithm_mpi::StrassenAlgorithmParallel::calculate_distribution(int len, int num_proc, std::vector<int>& sizes, std::vector<int>& displs) {
+    void StrassenAlgorithmParallel::calculate_distribution(int len, int num_proc, std::vector<int>& sizes, std::vector<int>& displs) {
         sizes.resize(num_proc, 0);
         displs.resize(num_proc, -1);
 
@@ -201,7 +201,7 @@ namespace nasedkin_e_strassen_algorithm_mpi {
         }
     }
 
-    bool nasedkin_e_strassen_algorithm_mpi::StrassenAlgorithmParallel::pre_processing() {
+    bool StrassenAlgorithmParallel::pre_processing() {
         sizes_a.resize(world.size());
         displs_a.resize(world.size());
 
@@ -232,7 +232,7 @@ namespace nasedkin_e_strassen_algorithm_mpi {
         return true;
     }
 
-    bool nasedkin_e_strassen_algorithm_mpi::StrassenAlgorithmParallel::validation() {
+    bool StrassenAlgorithmParallel::validation() {
         if (world.rank() == 0) {
             if (taskData->inputs_count.size() != 3 || taskData->outputs_count.size() != 1) {
                 return false;
@@ -249,8 +249,12 @@ namespace nasedkin_e_strassen_algorithm_mpi {
         return true;
     }
 
-    bool nasedkin_e_strassen_algorithm_mpi::StrassenAlgorithmParallel::run() {
+    bool StrassenAlgorithmParallel::run() {
         if (world.rank() == 0) {
+            // Ensure vectors are initialized
+            if (local_A.empty() || local_B.empty()) {
+                throw std::runtime_error("Vectors local_A or local_B are not initialized.");
+            }
             boost::mpi::scatterv(world, A_.data(), sizes_a, displs_a, local_A.data(), sizes_a[world.rank()], 0);
             boost::mpi::scatterv(world, B_.data(), sizes_a, displs_a, local_B.data(), sizes_a[world.rank()], 0);
         } else {
@@ -270,7 +274,7 @@ namespace nasedkin_e_strassen_algorithm_mpi {
         return true;
     }
 
-    bool nasedkin_e_strassen_algorithm_mpi::StrassenAlgorithmParallel::post_processing() {
+    bool StrassenAlgorithmParallel::post_processing() {
         if (world.rank() == 0) {
             for (size_t i = 0; i < n * n; ++i) {
                 reinterpret_cast<double*>(taskData->outputs[0])[i] = C_[i];
