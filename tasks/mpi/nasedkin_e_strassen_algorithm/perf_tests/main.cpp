@@ -10,6 +10,27 @@
 #include "core/perf/include/perf.hpp"
 #include "mpi/nasedkin_e_strassen_algorithm/include/ops_mpi.hpp"
 
+namespace nasedkin_e_strassen_algorithm_mpi {
+
+// Function to generate random matrices of size n x n
+    std::pair<std::vector<double>, std::vector<double>> generate_random_matrices(int n, double min_val = -10.0, double max_val = 10.0) {
+        std::vector<double> A(n * n);
+        std::vector<double> B(n * n);
+
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_real_distribution<> dist(min_val, max_val);
+
+        for (int i = 0; i < n * n; ++i) {
+            A[i] = dist(gen);
+            B[i] = dist(gen);
+        }
+
+        return {A, B};
+    }
+
+}  // namespace nasedkin_e_strassen_algorithm_mpi
+
 // Perf tests
 TEST(nasedkin_e_strassen_algorithm_mpi, test_pipeline_run) {
 boost::mpi::communicator world;

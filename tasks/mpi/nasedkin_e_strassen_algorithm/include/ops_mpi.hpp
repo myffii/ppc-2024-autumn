@@ -28,8 +28,8 @@ namespace nasedkin_e_strassen_algorithm_mpi {
         size_t n;
 
         void strassenMultiply(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, size_t n);
-        void addMatrices(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, size_t n);
-        void subtractMatrices(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, size_t n);
+        static void addMatrices(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, size_t n);
+        static void subtractMatrices(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, size_t n);
     };
 
     class StrassenAlgorithmParallel : public ppc::core::Task {
@@ -58,8 +58,8 @@ namespace nasedkin_e_strassen_algorithm_mpi {
         boost::mpi::communicator world;
         static void calculate_distribution(int len, int num_proc, std::vector<int>& sizes, std::vector<int>& displs);
         void strassenMultiplyParallel(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, size_t n);
-        void addMatrices(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, size_t n);
-        void subtractMatrices(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, size_t n);
+        static void addMatrices(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, size_t n);
+        static void subtractMatrices(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, size_t n);
     };
 
 }  // namespace nasedkin_e_strassen_algorithm_mpi

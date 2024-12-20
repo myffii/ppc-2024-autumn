@@ -7,7 +7,6 @@
 #include <random>
 #include <vector>
 
-#include "core/perf/include/perf.hpp"
 #include "mpi/nasedkin_e_strassen_algorithm/include/ops_mpi.hpp"
 
 namespace nasedkin_e_strassen_algorithm_mpi {

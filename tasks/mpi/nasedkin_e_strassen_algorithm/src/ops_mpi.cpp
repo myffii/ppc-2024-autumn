@@ -27,11 +27,31 @@ namespace nasedkin_e_strassen_algorithm_mpi {
 
         size_t half = n / 2;
 
-        std::vector<double> A11(half * half), A12(half * half), A21(half * half), A22(half * half);
-        std::vector<double> B11(half * half), B12(half * half), B21(half * half), B22(half * half);
-        std::vector<double> C11(half * half), C12(half * half), C21(half * half), C22(half * half);
-        std::vector<double> M1(half * half), M2(half * half), M3(half * half), M4(half * half), M5(half * half), M6(half * half), M7(half * half);
-        std::vector<double> temp1(half * half), temp2(half * half);
+        std::vector<double> A11(half * half);
+        std::vector<double> A12(half * half);
+        std::vector<double> A21(half * half);
+        std::vector<double> A22(half * half);
+
+        std::vector<double> B11(half * half);
+        std::vector<double> B12(half * half);
+        std::vector<double> B21(half * half);
+        std::vector<double> B22(half * half);
+
+        std::vector<double> C11(half * half);
+        std::vector<double> C12(half * half);
+        std::vector<double> C21(half * half);
+        std::vector<double> C22(half * half);
+
+        std::vector<double> M1(half * half);
+        std::vector<double> M2(half * half);
+        std::vector<double> M3(half * half);
+        std::vector<double> M4(half * half);
+        std::vector<double> M5(half * half);
+        std::vector<double> M6(half * half);
+        std::vector<double> M7(half * half);
+
+        std::vector<double> temp1(half * half);
+        std::vector<double> temp2(half * half);
 
         // Divide matrices A and B into 4 submatrices each
         for (size_t i = 0; i < half; ++i) {
@@ -97,7 +117,7 @@ namespace nasedkin_e_strassen_algorithm_mpi {
         }
     }
 
-    void StrassenAlgorithmSequential::addMatrices(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, size_t n) {
+     void addMatrices(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, size_t n) {
         for (size_t i = 0; i < n; ++i) {
             for (size_t j = 0; j < n; ++j) {
                 C[i * n + j] = A[i * n + j] + B[i * n + j];
@@ -105,7 +125,7 @@ namespace nasedkin_e_strassen_algorithm_mpi {
         }
     }
 
-    void StrassenAlgorithmSequential::subtractMatrices(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, size_t n) {
+     void subtractMatrices(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, size_t n) {
         for (size_t i = 0; i < n; ++i) {
             for (size_t j = 0; j < n; ++j) {
                 C[i * n + j] = A[i * n + j] - B[i * n + j];
@@ -200,11 +220,31 @@ namespace nasedkin_e_strassen_algorithm_mpi {
 
         size_t half = n / 2;
 
-        std::vector<double> A11(half * half), A12(half * half), A21(half * half), A22(half * half);
-        std::vector<double> B11(half * half), B12(half * half), B21(half * half), B22(half * half);
-        std::vector<double> C11(half * half), C12(half * half), C21(half * half), C22(half * half);
-        std::vector<double> M1(half * half), M2(half * half), M3(half * half), M4(half * half), M5(half * half), M6(half * half), M7(half * half);
-        std::vector<double> temp1(half * half), temp2(half * half);
+        std::vector<double> A11(half * half);
+        std::vector<double> A12(half * half);
+        std::vector<double> A21(half * half);
+        std::vector<double> A22(half * half);
+
+        std::vector<double> B11(half * half);
+        std::vector<double> B12(half * half);
+        std::vector<double> B21(half * half);
+        std::vector<double> B22(half * half);
+
+        std::vector<double> C11(half * half);
+        std::vector<double> C12(half * half);
+        std::vector<double> C21(half * half);
+        std::vector<double> C22(half * half);
+
+        std::vector<double> M1(half * half);
+        std::vector<double> M2(half * half);
+        std::vector<double> M3(half * half);
+        std::vector<double> M4(half * half);
+        std::vector<double> M5(half * half);
+        std::vector<double> M6(half * half);
+        std::vector<double> M7(half * half);
+
+        std::vector<double> temp1(half * half);
+        std::vector<double> temp2(half * half);
 
         // Divide matrices A and B into 4 submatrices each
         for (size_t i = 0; i < half; ++i) {
@@ -270,7 +310,7 @@ namespace nasedkin_e_strassen_algorithm_mpi {
         }
     }
 
-    void StrassenAlgorithmParallel::addMatrices(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, size_t n) {
+     void addMatrices(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, size_t n) {
         for (size_t i = 0; i < n; ++i) {
             for (size_t j = 0; j < n; ++j) {
                 C[i * n + j] = A[i * n + j] + B[i * n + j];
@@ -278,7 +318,7 @@ namespace nasedkin_e_strassen_algorithm_mpi {
         }
     }
 
-    void StrassenAlgorithmParallel::subtractMatrices(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, size_t n) {
+     void subtractMatrices(const std::vector<double>& A, const std::vector<double>& B, std::vector<double>& C, size_t n) {
         for (size_t i = 0; i < n; ++i) {
             for (size_t j = 0; j < n; ++j) {
                 C[i * n + j] = A[i * n + j] - B[i * n + j];
