@@ -162,36 +162,48 @@ void StrassenAlgorithmSequential::subtract(const std::vector<std::vector<double>
   }
 }
 
-bool StrassenAlgorithmParallel::pre_processing() {
-  internal_order_test();
-  sizes_a.resize(world.size());
-  displs_a.resize(world.size());
+    bool StrassenAlgorithmParallel::pre_processing() {
+        internal_order_test();
+        sizes_a.resize(world.size());
+        displs_a.resize(world.size());
 
-  sizes_b.resize(world.size());
-  displs_b.resize(world.size());
+        sizes_b.resize(world.size());
+        displs_b.resize(world.size());
 
-  if (world.rank() == 0) {
-    size_t matrix_size = *reinterpret_cast<size_t*>(taskData->inputs[0]);  // Изменено имя переменной
+        if (world.rank() == 0) {
+            if (taskData->inputs.size() < 3 || taskData->inputs_count.size() < 3) {
+                std::cerr << "Error: Not enough input data on rank 0" << std::endl;
+                return false;
+            }
 
-    A_.assign(matrix_size, std::vector<double>(matrix_size, 0.0));
-    B_.assign(matrix_size, std::vector<double>(matrix_size, 0.0));
-    C_.assign(matrix_size, std::vector<double>(matrix_size, 0.0));
+            size_t matrix_size = *reinterpret_cast<size_t*>(taskData->inputs[0]);
 
-    auto* A_input = reinterpret_cast<double*>(taskData->inputs[1]);
-    auto* B_input = reinterpret_cast<double*>(taskData->inputs[2]);
+            A_.assign(matrix_size, std::vector<double>(matrix_size, 0.0));
+            B_.assign(matrix_size, std::vector<double>(matrix_size, 0.0));
+            C_.assign(matrix_size, std::vector<double>(matrix_size, 0.0));
 
-    for (size_t i = 0; i < matrix_size; ++i) {
-      for (size_t j = 0; j < matrix_size; ++j) {
-        A_[i][j] = A_input[i * matrix_size + j];
-        B_[i][j] = B_input[i * matrix_size + j];
-      }
+            auto* A_input = reinterpret_cast<double*>(taskData->inputs[1]);
+            auto* B_input = reinterpret_cast<double*>(taskData->inputs[2]);
+
+            for (size_t i = 0; i < matrix_size; ++i) {
+                for (size_t j = 0; j < matrix_size; ++j) {
+                    A_[i][j] = A_input[i * matrix_size + j];
+                    B_[i][j] = B_input[i * matrix_size + j];
+                }
+            }
+
+            calculate_distribution(matrix_size, matrix_size, world.size(), sizes_a, displs_a);
+            calculate_distribution(matrix_size, matrix_size, world.size(), sizes_b, displs_b);
+        }
+
+        // Рассылка размеров и смещений всем процессам
+        boost::mpi::broadcast(world, sizes_a, 0);
+        boost::mpi::broadcast(world, displs_a, 0);
+        boost::mpi::broadcast(world, sizes_b, 0);
+        boost::mpi::broadcast(world, displs_b, 0);
+
+        return true;
     }
-
-    calculate_distribution(matrix_size, matrix_size, world.size(), sizes_a, displs_a);
-    calculate_distribution(matrix_size, matrix_size, world.size(), sizes_b, displs_b);
-  }
-  return true;
-}
 
 bool StrassenAlgorithmParallel::validation() {
   internal_order_test();
@@ -207,96 +219,93 @@ bool StrassenAlgorithmParallel::validation() {
   return true;
 }
 
-bool StrassenAlgorithmParallel::run() {
-  internal_order_test();
+    bool StrassenAlgorithmParallel::run() {
+        internal_order_test();
 
-  boost::mpi::broadcast(world, sizes_a, 0);
-  boost::mpi::broadcast(world, sizes_b, 0);
-  boost::mpi::broadcast(world, displs_a, 0);
-  boost::mpi::broadcast(world, displs_b, 0);
-  boost::mpi::broadcast(world, n, 0);
+        // Рассылка размеров и смещений всем процессам
+        boost::mpi::broadcast(world, sizes_a, 0);
+        boost::mpi::broadcast(world, displs_a, 0);
+        boost::mpi::broadcast(world, sizes_b, 0);
+        boost::mpi::broadcast(world, displs_b, 0);
+        boost::mpi::broadcast(world, n, 0);
 
-  int loc_mat_size = sizes_a[world.rank()];
+        int loc_mat_size = sizes_a[world.rank()];
 
-  std::vector<double> local_A_flat(loc_mat_size * n);
-  std::vector<double> local_B_flat(loc_mat_size * n);
-  std::vector<double> local_C_flat(loc_mat_size * n);
+        std::vector<double> local_A_flat(loc_mat_size * n);
+        std::vector<double> local_B_flat(loc_mat_size * n);
+        std::vector<double> local_C_flat(loc_mat_size * n);
 
-  if (world.rank() == 0) {
-    // Преобразуем матрицы в плоские массивы
-    auto A_flat = flatten_matrix(A_);
-    auto B_flat = flatten_matrix(B_);
+        if (world.rank() == 0) {
+            auto A_flat = flatten_matrix(A_);
+            auto B_flat = flatten_matrix(B_);
 
-    // Распределяем данные с использованием вектора смещений
-    boost::mpi::scatterv(world, A_flat, sizes_a, displs_a, local_A_flat.data(), sizes_a[0], 0);
-    boost::mpi::scatterv(world, B_flat, sizes_b, displs_b, local_B_flat.data(), sizes_b[0], 0);
-  } else {
-    // Получаем данные
-    boost::mpi::scatterv(world, local_A_flat.data(), sizes_a[world.rank()], 0);
-    boost::mpi::scatterv(world, local_B_flat.data(), sizes_b[world.rank()], 0);
-  }
+            boost::mpi::scatterv(world, A_flat, sizes_a, displs_a, local_A_flat.data(), sizes_a[0], 0);
+            boost::mpi::scatterv(world, B_flat, sizes_b, displs_b, local_B_flat.data(), sizes_b[0], 0);
+        } else {
+            boost::mpi::scatterv(world, local_A_flat.data(), sizes_a[world.rank()], 0);
+            boost::mpi::scatterv(world, local_B_flat.data(), sizes_b[world.rank()], 0);
+        }
 
-  // Преобразуем плоские массивы обратно в матрицы
-  local_A = unflatten_matrix(local_A_flat, loc_mat_size, n);
-  local_B = unflatten_matrix(local_B_flat, loc_mat_size, n);
+        local_A = unflatten_matrix(local_A_flat, loc_mat_size, n);
+        local_B = unflatten_matrix(local_B_flat, loc_mat_size, n);
 
-  // Выполняем вычисления
-  strassen_mpi(local_A, local_B, local_C);
+        strassen_mpi(local_A, local_B, local_C);
 
-  // Преобразуем результат в плоский массив
-  local_C_flat = flatten_matrix(local_C);
+        local_C_flat = flatten_matrix(local_C);
 
-  // Собираем данные
-  if (world.rank() == 0) {
-    std::vector<double> C_flat(n * n);
-    boost::mpi::gatherv(world, local_C_flat.data(), sizes_a[world.rank()], C_flat.data(), sizes_a, displs_a, 0);
-    // Преобразуем плоский массив обратно в матрицу
-    C_ = unflatten_matrix(C_flat, n, n);
-  } else {
-    boost::mpi::gatherv(world, local_C_flat.data(), sizes_a[world.rank()], 0);
-  }
+        if (world.rank() == 0) {
+            std::vector<double> C_flat(n * n);
+            boost::mpi::gatherv(world, local_C_flat.data(), sizes_a[world.rank()], C_flat.data(), sizes_a, displs_a, 0);
+            C_ = unflatten_matrix(C_flat, n, n);
+        } else {
+            boost::mpi::gatherv(world, local_C_flat.data(), sizes_a[world.rank()], 0);
+        }
 
-  return true;
-}
-
-bool StrassenAlgorithmParallel::post_processing() {
-  internal_order_test();
-  if (world.rank() == 0) {
-    auto* C_output = reinterpret_cast<double*>(taskData->outputs[0]);
-    for (size_t i = 0; i < n; ++i) {
-      for (size_t j = 0; j < n; ++j) {
-        C_output[i * n + j] = C_[i][j];
-      }
+        return true;
     }
-  }
-  return true;
-}
 
-void StrassenAlgorithmParallel::calculate_distribution(int rows, int cols, int num_proc, std::vector<int>& sizes, std::vector<int>& displs) {
-  sizes.resize(num_proc, 0);
-  displs.resize(num_proc, -1);
+    bool StrassenAlgorithmParallel::post_processing() {
+        internal_order_test();
+        if (world.rank() == 0) {
+            if (taskData->outputs.size() < 1) {
+                std::cerr << "Error: No output data on rank 0" << std::endl;
+                return false;
+            }
 
-  if (num_proc > rows) {
-    for (int i = 0; i < rows; ++i) {
-      sizes[i] = rows * cols;
-      displs[i] = i * rows * cols;
+            auto* C_output = reinterpret_cast<double*>(taskData->outputs[0]);
+            for (size_t i = 0; i < n; ++i) {
+                for (size_t j = 0; j < n; ++j) {
+                    C_output[i * n + j] = C_[i][j];
+                }
+            }
+        }
+        return true;
     }
-  } else {
-    int a = rows / num_proc;
-    int b = rows % num_proc;
 
-    int offset = 0;
-    for (int i = 0; i < num_proc; ++i) {
-      if (b-- > 0) {
-        sizes[i] = (a + 1) * cols;
-      } else {
-        sizes[i] = a * cols;
-      }
-      displs[i] = offset;
-      offset += sizes[i];
+    void StrassenAlgorithmParallel::calculate_distribution(int rows, int cols, int num_proc, std::vector<int>& sizes, std::vector<int>& displs) {
+        sizes.resize(num_proc, 0);
+        displs.resize(num_proc, 0);
+
+        if (num_proc > rows) {
+            // Если процессов больше, чем строк, то только первые `rows` процессов получают данные
+            for (int i = 0; i < rows; ++i) {
+                sizes[i] = rows * cols;
+                displs[i] = i * rows * cols;
+            }
+        } else {
+            // Равномерное распределение строк между процессами
+            int a = rows / num_proc;
+            int b = rows % num_proc;
+
+            int offset = 0;
+            for (int i = 0; i < num_proc; ++i) {
+                sizes[i] = (a + (b > 0 ? 1 : 0)) * cols;
+                displs[i] = offset;
+                offset += sizes[i];
+                b--;
+            }
+        }
     }
-  }
-}
 
 void StrassenAlgorithmParallel::distribute_matrix(const std::vector<std::vector<double>>& matrix, std::vector<std::vector<double>>& local_matrix, const std::vector<int>& sizes, const std::vector<int>& displs) {
   for (int i = 0; i < world.size(); ++i) {
