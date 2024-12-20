@@ -12,8 +12,7 @@
 
 namespace nasedkin_e_strassen_algorithm_mpi {
 
-// Function to generate random matrices of size n x n
-    std::pair<std::vector<double>, std::vector<double>> generate_random_matrices(int n, double min_val = -10.0, double max_val = 10.0) {
+    std::pair<std::vector<double>, std::vector<double>> generate_random_matrix(int n, double min_val = -10.0, double max_val = 10.0) {
         std::vector<double> A(n * n);
         std::vector<double> B(n * n);
 
@@ -29,31 +28,29 @@ namespace nasedkin_e_strassen_algorithm_mpi {
         return {A, B};
     }
 
-}  // namespace nasedkin_e_strassen_algorithm_mpi
+    TEST(nasedkin_e_strassen_algorithm_mpi, test_pipeline_run) {
+    boost::mpi::communicator world;
 
-// Perf tests
-TEST(nasedkin_e_strassen_algorithm_mpi, test_pipeline_run) {
-boost::mpi::communicator world;
+    const size_t matrix_size = 512;
+    auto [A_flat, B_flat] = generate_random_matrix(matrix_size);
 
-const size_t matrix_size = 512;
-auto [A_flat, B_flat] = nasedkin_e_strassen_algorithm_mpi::generate_random_matrices(matrix_size);
+    std::vector<double> C_parallel(matrix_size * matrix_size, 0.0);
 
-std::vector<size_t> in_size(1, matrix_size);
-std::vector<double> out(matrix_size * matrix_size, 0.0);
+    size_t matrix_size_copy = matrix_size;
 
-std::shared_ptr<ppc::core::TaskData> taskDataPar = std::make_shared<ppc::core::TaskData>();
-if (world.rank() == 0) {
-taskDataPar->inputs.emplace_back(reinterpret_cast<uint8_t*>(in_size.data()));
-taskDataPar->inputs_count.emplace_back(in_size.size());
-taskDataPar->inputs.emplace_back(reinterpret_cast<uint8_t*>(A_flat.data()));
-taskDataPar->inputs_count.emplace_back(A_flat.size());
-taskDataPar->inputs.emplace_back(reinterpret_cast<uint8_t*>(B_flat.data()));
-taskDataPar->inputs_count.emplace_back(B_flat.size());
-taskDataPar->outputs.emplace_back(reinterpret_cast<uint8_t*>(out.data()));
-taskDataPar->outputs_count.emplace_back(out.size());
+    std::shared_ptr<ppc::core::TaskData> taskDataPar = std::make_shared<ppc::core::TaskData>();
+    if (world.rank() == 0) {
+    taskDataPar->inputs.emplace_back(reinterpret_cast<uint8_t*>(&matrix_size_copy));
+    taskDataPar->inputs_count.emplace_back(1);
+    taskDataPar->inputs.emplace_back(reinterpret_cast<uint8_t*>(A_flat.data()));
+    taskDataPar->inputs_count.emplace_back(A_flat.size());
+    taskDataPar->inputs.emplace_back(reinterpret_cast<uint8_t*>(B_flat.data()));
+    taskDataPar->inputs_count.emplace_back(B_flat.size());
+    taskDataPar->outputs.emplace_back(reinterpret_cast<uint8_t*>(C_parallel.data()));
+    taskDataPar->outputs_count.emplace_back(C_parallel.size());
 }
 
-auto strassenTaskParallel = std::make_shared<nasedkin_e_strassen_algorithm_mpi::StrassenAlgorithmParallel>(taskDataPar);
+auto strassenTaskParallel = std::make_shared<StrassenAlgorithmParallel>(taskDataPar);
 ASSERT_EQ(strassenTaskParallel->validation(), true);
 strassenTaskParallel->pre_processing();
 strassenTaskParallel->run();
@@ -70,7 +67,7 @@ auto perfAnalyzer = std::make_shared<ppc::core::Perf>(strassenTaskParallel);
 perfAnalyzer->pipeline_run(perfAttr, perfResults);
 if (world.rank() == 0) {
 ppc::core::Perf::print_perf_statistic(perfResults);
-ASSERT_EQ(matrix_size * matrix_size, out.size());
+ASSERT_EQ(matrix_size * matrix_size, C_parallel.size());
 }
 }
 
@@ -78,24 +75,25 @@ TEST(nasedkin_e_strassen_algorithm_mpi, test_task_run) {
 boost::mpi::communicator world;
 
 const size_t matrix_size = 512;
-auto [A_flat, B_flat] = nasedkin_e_strassen_algorithm_mpi::generate_random_matrices(matrix_size);
+auto [A_flat, B_flat] = generate_random_matrix(matrix_size);
 
-std::vector<size_t> in_size(1, matrix_size);
-std::vector<double> out(matrix_size * matrix_size, 0.0);
+std::vector<double> C_parallel(matrix_size * matrix_size, 0.0);
+
+size_t matrix_size_copy = matrix_size;
 
 std::shared_ptr<ppc::core::TaskData> taskDataPar = std::make_shared<ppc::core::TaskData>();
 if (world.rank() == 0) {
-taskDataPar->inputs.emplace_back(reinterpret_cast<uint8_t*>(in_size.data()));
-taskDataPar->inputs_count.emplace_back(in_size.size());
+taskDataPar->inputs.emplace_back(reinterpret_cast<uint8_t*>(&matrix_size_copy));
+taskDataPar->inputs_count.emplace_back(1);
 taskDataPar->inputs.emplace_back(reinterpret_cast<uint8_t*>(A_flat.data()));
 taskDataPar->inputs_count.emplace_back(A_flat.size());
 taskDataPar->inputs.emplace_back(reinterpret_cast<uint8_t*>(B_flat.data()));
 taskDataPar->inputs_count.emplace_back(B_flat.size());
-taskDataPar->outputs.emplace_back(reinterpret_cast<uint8_t*>(out.data()));
-taskDataPar->outputs_count.emplace_back(out.size());
+taskDataPar->outputs.emplace_back(reinterpret_cast<uint8_t*>(C_parallel.data()));
+taskDataPar->outputs_count.emplace_back(C_parallel.size());
 }
 
-auto strassenTaskParallel = std::make_shared<nasedkin_e_strassen_algorithm_mpi::StrassenAlgorithmParallel>(taskDataPar);
+auto strassenTaskParallel = std::make_shared<StrassenAlgorithmParallel>(taskDataPar);
 ASSERT_EQ(strassenTaskParallel->validation(), true);
 strassenTaskParallel->pre_processing();
 strassenTaskParallel->run();
@@ -112,6 +110,8 @@ auto perfAnalyzer = std::make_shared<ppc::core::Perf>(strassenTaskParallel);
 perfAnalyzer->task_run(perfAttr, perfResults);
 if (world.rank() == 0) {
 ppc::core::Perf::print_perf_statistic(perfResults);
-ASSERT_EQ(matrix_size * matrix_size, out.size());
+ASSERT_EQ(matrix_size * matrix_size, C_parallel.size());
 }
 }
+
+}  // namespace nasedkin_e_strassen_algorithm_mpi
