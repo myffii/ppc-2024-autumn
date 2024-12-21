@@ -13,11 +13,6 @@ namespace nasedkin_e_strassen_algorithm {
 
         result.resize(n, std::vector<double>(n, 0.0));
 
-        std::vector<std::vector<double>> local_A;
-        std::vector<std::vector<double>> local_B;
-        distribute_matrix(A, local_A);
-        distribute_matrix(B, local_B);
-
         return true;
     }
 
@@ -38,9 +33,18 @@ namespace nasedkin_e_strassen_algorithm {
     }
 
     bool StrassenAlgorithmMPI::run() {
+        std::vector<std::vector<double>> local_A;
+        std::vector<std::vector<double>> local_B;
         std::vector<std::vector<double>> local_result(n / world.size(), std::vector<double>(n, 0.0));
-        strassen_multiply(A, B, local_result, n / world.size());
 
+        // Distribute matrices A and B to all processes
+        distribute_matrix(A, local_A);
+        distribute_matrix(B, local_B);
+
+        // Perform Strassen multiplication
+        strassen_multiply(local_A, local_B, local_result, n / world.size());
+
+        // Gather the results from all processes
         gather_result(local_result, result);
 
         return true;
@@ -49,7 +53,7 @@ namespace nasedkin_e_strassen_algorithm {
     bool StrassenAlgorithmMPI::post_processing() { return true; }
 
     void StrassenAlgorithmMPI::strassen_multiply(const std::vector<std::vector<double>>& local_A, const std::vector<std::vector<double>>& local_B, std::vector<std::vector<double>>& local_result, int size) {
-        if (size <= 2) {
+        if (size <= 64) {
             for (int i = 0; i < size; ++i) {
                 for (int j = 0; j < size; ++j) {
                     local_result[i][j] = 0;
