@@ -14,7 +14,7 @@ namespace nasedkin_e_strassen_algorithm_mpi {
 
     bool StrassenAlgorithmSequential::pre_processing() {
         internal_order_test();
-        size_t matrix_size = *reinterpret_cast<size_t*>(taskData->inputs[0]);  // Изменено имя переменной
+        size_t matrix_size = *reinterpret_cast<size_t*>(taskData->inputs[0]);
 
         A_.assign(matrix_size, std::vector<double>(matrix_size, 0.0));
         B_.assign(matrix_size, std::vector<double>(matrix_size, 0.0));
@@ -29,7 +29,7 @@ namespace nasedkin_e_strassen_algorithm_mpi {
                 B_[i][j] = B_input[i * matrix_size + j];
             }
         }
-
+        std::cout << "seq preporcessing done" << std::endl;
         return true;
     }
 
@@ -42,12 +42,14 @@ namespace nasedkin_e_strassen_algorithm_mpi {
 
         n = *reinterpret_cast<size_t*>(taskData->inputs[0]);
         return n > 0;
+        std::cout << "seq validation done" << std::endl;
     }
 
     bool StrassenAlgorithmSequential::run() {
         internal_order_test();
         strassen(A_, B_, C_);
         return true;
+        std::cout << "seq run done" << std::endl;
     }
 
     bool StrassenAlgorithmSequential::post_processing() {
@@ -59,6 +61,7 @@ namespace nasedkin_e_strassen_algorithm_mpi {
             }
         }
         return true;
+        std::cout << "seq postprocessing done" << std::endl;
     }
 
     void StrassenAlgorithmSequential::strassen(const std::vector<std::vector<double>>& A, const std::vector<std::vector<double>>& B, std::vector<std::vector<double>>& C) {
@@ -162,14 +165,15 @@ namespace nasedkin_e_strassen_algorithm_mpi {
 
     bool StrassenAlgorithmParallel::pre_processing() {
         internal_order_test();
-        sizes_a.resize(world.size());
-        displs_a.resize(world.size());
-
-        sizes_b.resize(world.size());
-        displs_b.resize(world.size());
 
         if (world.rank() == 0) {
-            size_t matrix_size = *reinterpret_cast<size_t*>(taskData->inputs[0]);  // Изменено имя переменной
+            std::cout << "Preprocessing: Initializing data" << std::endl;
+        }
+
+        world.barrier();
+
+        if (world.rank() == 0) {
+            size_t matrix_size = *reinterpret_cast<size_t*>(taskData->inputs[0]);
 
             A_.assign(matrix_size, std::vector<double>(matrix_size, 0.0));
             B_.assign(matrix_size, std::vector<double>(matrix_size, 0.0));
@@ -184,29 +188,56 @@ namespace nasedkin_e_strassen_algorithm_mpi {
                     B_[i][j] = B_input[i * matrix_size + j];
                 }
             }
-
-            calculate_distribution(matrix_size, matrix_size, world.size(), sizes_a, displs_a);
-            calculate_distribution(matrix_size, matrix_size, world.size(), sizes_b, displs_b);
+            std::cout << "Process " << world.rank() << ": Matrices initialized" << std::endl;
         }
+
+        world.barrier();
         return true;
     }
+
 
     bool StrassenAlgorithmParallel::validation() {
         internal_order_test();
 
         if (world.rank() == 0) {
-            if (taskData->inputs_count.size() != 3 || taskData->outputs_count.size() != 1) {
-                return false;
-            }
+            std::cout << "Validation: Checking taskData inputs and outputs" << std::endl;
+        }
 
-            n = *reinterpret_cast<size_t*>(taskData->inputs[0]);
-            return n > 0;
+        if (taskData->inputs_count.size() != 3 || taskData->outputs_count.size() != 1) {
+            if (world.rank() == 0) {
+                std::cerr << "Validation failed: incorrect input or output sizes" << std::endl;
+            }
+            return false;
+        }
+
+        if (taskData->inputs[1] == nullptr || taskData->inputs[2] == nullptr) {
+            if (world.rank() == 0) {
+                std::cerr << "Validation failed: null pointer in inputs" << std::endl;
+            }
+            return false;
+        }
+
+        n = *reinterpret_cast<size_t*>(taskData->inputs[0]);
+        if (n <= 0) {
+            if (world.rank() == 0) {
+                std::cerr << "Validation failed: matrix size must be positive" << std::endl;
+            }
+            return false;
+        }
+
+        if (world.rank() == 0) {
+            std::cout << "Validation passed with matrix size: " << n << std::endl;
         }
         return true;
     }
 
+
     bool StrassenAlgorithmParallel::run() {
         internal_order_test();
+
+        if (world.rank() == 0) {
+            std::cout << "Broadcasting sizes and displacements" << std::endl;
+        }
 
         boost::mpi::broadcast(world, sizes_a, 0);
         boost::mpi::broadcast(world, sizes_b, 0);
@@ -214,7 +245,12 @@ namespace nasedkin_e_strassen_algorithm_mpi {
         boost::mpi::broadcast(world, displs_b, 0);
         boost::mpi::broadcast(world, n, 0);
 
+        if (world.rank() == 0) {
+            std::cout << "Sizes and displacements broadcasted successfully" << std::endl;
+        }
+
         int loc_mat_size = sizes_a[world.rank()];
+        std::cout << "Process " << world.rank() << ": Local matrix size = " << loc_mat_size << std::endl;
 
         std::vector<double> local_A_flat(loc_mat_size * n);
         std::vector<double> local_B_flat(loc_mat_size * n);
@@ -224,11 +260,16 @@ namespace nasedkin_e_strassen_algorithm_mpi {
             auto A_flat = flatten_matrix(A_);
             auto B_flat = flatten_matrix(B_);
 
+            std::cout << "Process " << world.rank() << ": Flattened matrices" << std::endl;
+
             boost::mpi::scatterv(world, A_flat, sizes_a, displs_a, local_A_flat.data(), sizes_a[0], 0);
             boost::mpi::scatterv(world, B_flat, sizes_b, displs_b, local_B_flat.data(), sizes_b[0], 0);
+
+            std::cout << "Process " << world.rank() << ": Scatterv completed" << std::endl;
         } else {
             boost::mpi::scatterv(world, local_A_flat.data(), sizes_a[world.rank()], 0);
             boost::mpi::scatterv(world, local_B_flat.data(), sizes_b[world.rank()], 0);
+            std::cout << "Process " << world.rank() << ": Received data via scatterv" << std::endl;
         }
 
         local_A = unflatten_matrix(local_A_flat, loc_mat_size, n);
@@ -236,18 +277,23 @@ namespace nasedkin_e_strassen_algorithm_mpi {
 
         strassen_mpi(local_A, local_B, local_C);
 
+        std::cout << "Process " << world.rank() << ": Strassen algorithm completed" << std::endl;
+
         local_C_flat = flatten_matrix(local_C);
 
         if (world.rank() == 0) {
             std::vector<double> C_flat(n * n);
             boost::mpi::gatherv(world, local_C_flat.data(), sizes_a[world.rank()], C_flat.data(), sizes_a, displs_a, 0);
             C_ = unflatten_matrix(C_flat, n, n);
+            std::cout << "Process " << world.rank() << ": Gathered result matrix" << std::endl;
         } else {
             boost::mpi::gatherv(world, local_C_flat.data(), sizes_a[world.rank()], 0);
+            std::cout << "Process " << world.rank() << ": Sent result matrix via gatherv" << std::endl;
         }
 
         return true;
     }
+
 
     bool StrassenAlgorithmParallel::post_processing() {
         internal_order_test();
@@ -260,11 +306,16 @@ namespace nasedkin_e_strassen_algorithm_mpi {
             }
         }
         return true;
+        std::cout << "mpi postprocessing done" << std::endl;
     }
 
     void StrassenAlgorithmParallel::calculate_distribution(int rows, int cols, int num_proc, std::vector<int>& sizes, std::vector<int>& displs) {
         sizes.resize(num_proc, 0);
         displs.resize(num_proc, -1);
+
+        if (world.rank() == 0) {
+            std::cout << "Calculating distribution for rows: " << rows << ", cols: " << cols << ", processes: " << num_proc << std::endl;
+        }
 
         if (num_proc > rows) {
             for (int i = 0; i < rows; ++i) {
@@ -286,7 +337,16 @@ namespace nasedkin_e_strassen_algorithm_mpi {
                 offset += sizes[i];
             }
         }
+
+        if (world.rank() == 0) {
+            std::cout << "Sizes: ";
+            for (const auto& size : sizes) std::cout << size << " ";
+            std::cout << "\nDisplacements: ";
+            for (const auto& disp : displs) std::cout << disp << " ";
+            std::cout << std::endl;
+        }
     }
+
 
     void StrassenAlgorithmParallel::distribute_matrix(const std::vector<std::vector<double>>& matrix, std::vector<std::vector<double>>& local_matrix, const std::vector<int>& sizes, const std::vector<int>& displs) {
         for (int i = 0; i < world.size(); ++i) {
