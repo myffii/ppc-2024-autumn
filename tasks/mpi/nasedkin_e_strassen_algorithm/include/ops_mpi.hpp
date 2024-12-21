@@ -56,6 +56,8 @@ namespace nasedkin_e_strassen_algorithm_mpi {
         std::vector<int> sizes_b;
         std::vector<int> displs_b;
 
+        static int recursion_depth;
+
         boost::mpi::communicator world;
         void calculate_distribution(int rows, int cols, int num_proc, std::vector<int>& sizes, std::vector<int>& displs);
         void distribute_matrix(const std::vector<std::vector<double>>& matrix, std::vector<std::vector<double>>& local_matrix, const std::vector<int>& sizes, const std::vector<int>& displs);
