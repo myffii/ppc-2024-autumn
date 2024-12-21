@@ -58,7 +58,7 @@ namespace nasedkin_e_strassen_algorithm_mpi {
 
         boost::mpi::communicator world;
         void calculate_distribution(int rows, int cols, int num_proc, std::vector<int>& sizes, std::vector<int>& displs);
-        distribute_matrix(const std::vector<std::vector<double>>& matrix, std::vector<std::vector<double>>& local_matrix, const std::vector<int>& sizes, const std::vector<int>& displs);
+        void distribute_matrix(const std::vector<std::vector<double>>& matrix, std::vector<std::vector<double>>& local_matrix, const std::vector<int>& sizes, const std::vector<int>& displs);
         void gather_matrix(std::vector<std::vector<double>>& matrix, const std::vector<std::vector<double>>& local_matrix, const std::vector<int>& sizes, const std::vector<int>& displs);
         void strassen_mpi(const std::vector<std::vector<double>>& A, const std::vector<std::vector<double>>& B, std::vector<std::vector<double>>& C);
         static void add(const std::vector<std::vector<double>>& A, const std::vector<std::vector<double>>& B, std::vector<std::vector<double>>& C);
