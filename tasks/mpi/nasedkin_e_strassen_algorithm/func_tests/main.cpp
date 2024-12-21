@@ -22,8 +22,7 @@ ASSERT_TRUE(strassen_task.run()) << "Run failed for random matrix";
 ASSERT_TRUE(strassen_task.post_processing()) << "Post-processing failed for random matrix";
 
 // Проверка результата (только на процессе с rank = 0)
-if (strassen_task.world.rank() == 0) {
-auto result = strassen_task.get_result();
+if (strassen_task.get_rank() == 0) {
 // Здесь можно добавить проверку результата, например, сравнить с ожидаемым значением
 }
 }
@@ -47,8 +46,7 @@ ASSERT_TRUE(strassen_task.run()) << "Run failed for random matrix";
 ASSERT_TRUE(strassen_task.post_processing()) << "Post-processing failed for random matrix";
 
 // Проверка результата (только на процессе с rank = 0)
-if (strassen_task.world.rank() == 0) {
-auto result = strassen_task.get_result();
+if (strassen_task.get_rank() == 0) {
 // Здесь можно добавить проверку результата, например, сравнить с ожидаемым значением
 }
 }
@@ -72,8 +70,7 @@ ASSERT_TRUE(strassen_task.run()) << "Run failed for random matrix";
 ASSERT_TRUE(strassen_task.post_processing()) << "Post-processing failed for random matrix";
 
 // Проверка результата (только на процессе с rank = 0)
-if (strassen_task.world.rank() == 0) {
-auto result = strassen_task.get_result();
+if (strassen_task.get_rank() == 0) {
 // Здесь можно добавить проверку результата, например, сравнить с ожидаемым значением
 }
 }

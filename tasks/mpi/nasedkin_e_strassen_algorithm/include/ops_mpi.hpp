@@ -22,6 +22,7 @@ namespace nasedkin_e_strassen_algorithm {
         void set_matrices(const std::vector<std::vector<double>>& matrixA, const std::vector<std::vector<double>>& matrixB);
         static void generate_random_matrix(int size, std::vector<std::vector<double>>& matrix);
         const std::vector<std::vector<double>>& get_result() const { return result; }
+        int get_rank() const { return world.rank(); }
 
     private:
         boost::mpi::communicator world;
