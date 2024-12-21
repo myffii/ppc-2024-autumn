@@ -228,7 +228,7 @@ namespace nasedkin_e_strassen_algorithm_mpi {
             return false;
         }
 
-        if (!taskData->inputs[1] || !taskData->inputs[2]) {
+        if (taskData->inputs[1] == nullptr || taskData->inputs[2] == nullptr) {
             std::cerr << "Process " << world.rank() << ": Validation failed - Null pointer in inputs" << std::endl;
             return false;
         }
