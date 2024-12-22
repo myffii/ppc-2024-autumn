@@ -4,6 +4,7 @@
 #include <cmath>
 #include <memory>
 #include <gtest/gtest.h>
+#include <boost/mpi/timer.hpp>
 #include "mpi/nasedkin_e_strassen_algorithm/include/ops_mpi.hpp"
 
 std::vector<double> generate_random_matrix(size_t size) {
@@ -22,8 +23,8 @@ TEST(nasedkin_e_strassen_algorithm_mpi, test_pipeline_run) {
     std::vector<double> matrixA = generate_random_matrix(size);
     std::vector<double> matrixB = generate_random_matrix(size);
 
-    taskData->inputs.emplace_back(matrixA.data());
-    taskData->inputs.emplace_back(matrixB.data());
+    taskData->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixA.data()));
+    taskData->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixB.data()));
     taskData->inputs_count.emplace_back(size * size);
     taskData->inputs_count.emplace_back(size * size);
 
@@ -55,8 +56,9 @@ TEST(nasedkin_e_strassen_algorithm_mpi, test_task_run) {
     std::vector<double> matrixA = generate_random_matrix(size);
     std::vector<double> matrixB = generate_random_matrix(size);
 
-    taskData->inputs.emplace_back(matrixA.data());
-    taskData->inputs.emplace_back(matrixB.data());
+    // Используем reinterpret_cast<uint8_t*> для преобразования double* в uint8_t*
+    taskData->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixA.data()));
+    taskData->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixB.data()));
     taskData->inputs_count.emplace_back(size * size);
     taskData->inputs_count.emplace_back(size * size);
 
