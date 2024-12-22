@@ -8,8 +8,15 @@
 
 TEST(nasedkin_e_strassen_algorithm_mpi, test_pipeline_run) {
 auto taskData = std::make_shared<ppc::core::TaskData>();
-taskData->inputs.push_back(generate_random_matrix(8));
-taskData->inputs.push_back(generate_random_matrix(8));
+
+size_t size = 8;
+double* matrixA = generate_random_matrix(size);
+double* matrixB = generate_random_matrix(size);
+
+taskData->inputs.push_back(matrixA);
+taskData->inputs.push_back(matrixB);
+taskData->inputs_count.push_back(size * size);
+taskData->inputs_count.push_back(size * size);
 
 auto strassenTask = std::make_shared<nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI>(taskData);
 
@@ -30,12 +37,23 @@ auto perfAnalyzer = std::make_shared<ppc::core::Perf>(strassenTask);
 perfAnalyzer->pipeline_run(perfAttr, perfResults);
 
 ppc::core::Perf::print_perf_statistic(perfResults);
+
+// Очистка памяти
+delete[] matrixA;
+delete[] matrixB;
 }
 
 TEST(nasedkin_e_strassen_algorithm_mpi, test_task_run) {
 auto taskData = std::make_shared<ppc::core::TaskData>();
-taskData->inputs.push_back(generate_random_matrix(8));
-taskData->inputs.push_back(generate_random_matrix(8));
+
+size_t size = 8;
+double* matrixA = generate_random_matrix(size);
+double* matrixB = generate_random_matrix(size);
+
+taskData->inputs.push_back(matrixA);
+taskData->inputs.push_back(matrixB);
+taskData->inputs_count.push_back(size * size);
+taskData->inputs_count.push_back(size * size);
 
 auto strassenTask = std::make_shared<nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI>(taskData);
 
@@ -56,4 +74,7 @@ auto perfAnalyzer = std::make_shared<ppc::core::Perf>(strassenTask);
 perfAnalyzer->task_run(perfAttr, perfResults);
 
 ppc::core::Perf::print_perf_statistic(perfResults);
+
+delete[] matrixA;
+delete[] matrixB;
 }

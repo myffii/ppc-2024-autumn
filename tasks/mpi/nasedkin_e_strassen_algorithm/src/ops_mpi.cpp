@@ -11,45 +11,31 @@
 namespace nasedkin_e_strassen_algorithm {
 
     bool StrassenAlgorithmMPI::pre_processing() {
-        internal_order_test();
         int rank = world.rank();
         if (rank == 0) {
-            auto taskData = getTaskData();
-            auto inputsA = taskData->inputs[0];
-            auto inputsB = taskData->inputs[1];
+            auto taskData = this->getTaskData();
+            auto* inputsA = reinterpret_cast<double*>(taskData->inputs[0]);
+            auto* inputsB = reinterpret_cast<double*>(taskData->inputs[1]);
 
-            if (inputsA.empty() || inputsB.empty()) {
+            if (inputsA == nullptr || inputsB == nullptr) {
                 return false;
             }
 
-            matrixSize = static_cast<size_t>(std::sqrt(inputsA.size()));
+            matrixSize = static_cast<size_t>(std::sqrt(taskData->inputs_count[0]));
 
-            inputMatrixA.resize(matrixSize * matrixSize);
-            inputMatrixB.resize(matrixSize * matrixSize);
+            inputMatrixA.assign(inputsA, inputsA + matrixSize * matrixSize);
+            inputMatrixB.assign(inputsB, inputsB + matrixSize * matrixSize);
             outputMatrix.resize(matrixSize * matrixSize, 0.0);
-            std::copy(inputsA.begin(), inputsA.end(), inputMatrixA.begin());
-            std::copy(inputsB.begin(), inputsB.end(), inputMatrixB.begin());
         }
         return true;
     }
 
     bool StrassenAlgorithmMPI::validation() {
-        internal_order_test();
-
         int rank = world.rank();
-
         if (rank == 0) {
-            if (inputMatrixA.empty() || inputMatrixB.empty()) {
-                return false;
-            }
-
-            if (inputMatrixA.size() != inputMatrixB.size()) {
-                return false;
-            }
-
-            if (outputMatrix.size() != inputMatrixA.size()) {
-                return false;
-            }
+            auto taskData = this->getTaskData();
+            return !taskData->inputs.empty() && taskData->inputs_count[0] == taskData->inputs_count[1] &&
+                   is_square_matrix_size(taskData->inputs_count[0]) && taskData->inputs_count[0] == taskData->outputs_count[0];
         }
         return true;
     }
@@ -61,12 +47,11 @@ namespace nasedkin_e_strassen_algorithm {
     }
 
     bool StrassenAlgorithmMPI::post_processing() {
-        internal_order_test();
         int rank = world.rank();
         if (rank == 0) {
-            auto taskData = getTaskData();
-            taskData->outputs[0].resize(outputMatrix.size());
-            std::copy(outputMatrix.begin(), outputMatrix.end(), taskData->outputs[0].begin());
+            auto taskData = this->getTaskData();
+            auto* outputs = reinterpret_cast<double*>(taskData->outputs[0]);
+            std::copy(outputMatrix.begin(), outputMatrix.end(), outputs);
         }
         return true;
     }
@@ -224,10 +209,15 @@ namespace nasedkin_e_strassen_algorithm {
 
         size_t half_size = new_size / 2;
 
-        std::vector<double> A11(half_size * half_size), A12(half_size * half_size),
-                A21(half_size * half_size), A22(half_size * half_size);
-        std::vector<double> B11(half_size * half_size), B12(half_size * half_size),
-                B21(half_size * half_size), B22(half_size * half_size);
+        std::vector<double> A11(half_size * half_size);
+        std::vector<double> A12(half_size * half_size);
+        std::vector<double> A21(half_size * half_size);
+        std::vector<double> A22(half_size * half_size);
+
+        std::vector<double> B11(half_size * half_size);
+        std::vector<double> B12(half_size * half_size);
+        std::vector<double> B21(half_size * half_size);
+        std::vector<double> B22(half_size * half_size);
 
         for (size_t i = 0; i < half_size; ++i) {
             for (size_t j = 0; j < half_size; ++j) {
