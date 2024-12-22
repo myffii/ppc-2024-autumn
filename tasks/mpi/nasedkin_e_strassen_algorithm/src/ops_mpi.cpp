@@ -3,6 +3,7 @@
 #include <cmath>
 #include <iostream>
 #include <boost/mpi/collectives.hpp>
+#include <boost/serialization/vector.hpp>
 
 namespace nasedkin_e_strassen_algorithm {
 
@@ -37,14 +38,11 @@ namespace nasedkin_e_strassen_algorithm {
         std::vector<std::vector<double>> local_B;
         std::vector<std::vector<double>> local_result(n / world.size(), std::vector<double>(n, 0.0));
 
-        // Distribute matrices A and B to all processes
         distribute_matrix(A, local_A);
         distribute_matrix(B, local_B);
 
-        // Perform Strassen multiplication
         strassen_multiply(local_A, local_B, local_result, n / world.size());
 
-        // Gather the results from all processes
         gather_result(local_result, result);
 
         return true;
@@ -53,7 +51,7 @@ namespace nasedkin_e_strassen_algorithm {
     bool StrassenAlgorithmMPI::post_processing() { return true; }
 
     void StrassenAlgorithmMPI::strassen_multiply(const std::vector<std::vector<double>>& local_A, const std::vector<std::vector<double>>& local_B, std::vector<std::vector<double>>& local_result, int size) {
-        if (size <= 64) {
+        if (size <= 2) {
             for (int i = 0; i < size; ++i) {
                 for (int j = 0; j < size; ++j) {
                     local_result[i][j] = 0;
@@ -191,7 +189,7 @@ namespace nasedkin_e_strassen_algorithm {
         unflatten_matrix(local_flat_matrix, distributed_matrix, local_size, n);
     }
 
-    void StrassenAlgorithmMPI::gather_result(const std::vector<std::vector<double>>& local_result, std::vector<std::vector<double>>& result) {
+    void StrassenAlgorithmMPI::gather_result(const std::vector<std::vector<double>>& local_result, std::vector<std::vector<double>>& gathered_result) {
         int num_processes = world.size();
         int local_size = n / num_processes;
 
@@ -201,7 +199,7 @@ namespace nasedkin_e_strassen_algorithm {
         std::vector<double> flat_result(n * n);
         boost::mpi::gather(world, local_flat_result.data(), local_size * n, flat_result.data(), 0);
 
-        unflatten_matrix(flat_result, result, n, n);
+        unflatten_matrix(flat_result, gathered_result, n, n);
     }
 
     void StrassenAlgorithmMPI::flatten_matrix(const std::vector<std::vector<double>>& matrix, std::vector<double>& flat_matrix) {

@@ -3,7 +3,6 @@
 #include "mpi/nasedkin_e_strassen_algorithm/include/ops_mpi.hpp"
 #include "mpi/nasedkin_e_strassen_algorithm/src/ops_mpi.cpp"
 
-// Тест для матрицы 2x2
 TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_2x2) {
 auto taskData = std::make_shared<ppc::core::TaskData>();
 taskData->inputs_count.push_back(2);
@@ -21,13 +20,8 @@ ASSERT_TRUE(strassen_task.pre_processing()) << "Pre-processing failed for random
 ASSERT_TRUE(strassen_task.run()) << "Run failed for random matrix";
 ASSERT_TRUE(strassen_task.post_processing()) << "Post-processing failed for random matrix";
 
-// Проверка результата (только на процессе с rank = 0)
-if (strassen_task.get_rank() == 0) {
-// Здесь можно добавить проверку результата, например, сравнить с ожидаемым значением
-}
 }
 
-// Тест для матрицы 4x4
 TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_4x4) {
 auto taskData = std::make_shared<ppc::core::TaskData>();
 taskData->inputs_count.push_back(4);
@@ -45,13 +39,8 @@ ASSERT_TRUE(strassen_task.pre_processing()) << "Pre-processing failed for random
 ASSERT_TRUE(strassen_task.run()) << "Run failed for random matrix";
 ASSERT_TRUE(strassen_task.post_processing()) << "Post-processing failed for random matrix";
 
-// Проверка результата (только на процессе с rank = 0)
-if (strassen_task.get_rank() == 0) {
-// Здесь можно добавить проверку результата, например, сравнить с ожидаемым значением
-}
 }
 
-// Тест для матрицы 8x8
 TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_8x8) {
 auto taskData = std::make_shared<ppc::core::TaskData>();
 taskData->inputs_count.push_back(8);
@@ -69,8 +58,4 @@ ASSERT_TRUE(strassen_task.pre_processing()) << "Pre-processing failed for random
 ASSERT_TRUE(strassen_task.run()) << "Run failed for random matrix";
 ASSERT_TRUE(strassen_task.post_processing()) << "Post-processing failed for random matrix";
 
-// Проверка результата (только на процессе с rank = 0)
-if (strassen_task.get_rank() == 0) {
-// Здесь можно добавить проверку результата, например, сравнить с ожидаемым значением
-}
 }
