@@ -8,7 +8,8 @@
 
 TEST(nasedkin_e_strassen_algorithm_mpi, test_pipeline_run) {
 auto taskData = std::make_shared<ppc::core::TaskData>();
-taskData->inputs_count.push_back(8);
+taskData->inputs.push_back(generate_random_matrix(8));
+taskData->inputs.push_back(generate_random_matrix(8));
 
 auto strassenTask = std::make_shared<nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI>(taskData);
 
@@ -33,7 +34,8 @@ ppc::core::Perf::print_perf_statistic(perfResults);
 
 TEST(nasedkin_e_strassen_algorithm_mpi, test_task_run) {
 auto taskData = std::make_shared<ppc::core::TaskData>();
-taskData->inputs_count.push_back(8);
+taskData->inputs.push_back(generate_random_matrix(8));
+taskData->inputs.push_back(generate_random_matrix(8));
 
 auto strassenTask = std::make_shared<nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI>(taskData);
 

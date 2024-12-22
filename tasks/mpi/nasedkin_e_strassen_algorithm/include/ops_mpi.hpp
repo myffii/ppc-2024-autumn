@@ -19,27 +19,18 @@ namespace nasedkin_e_strassen_algorithm {
         bool run() override;
         bool post_processing() override;
 
-        void set_matrices(const std::vector<std::vector<double>>& matrixA, const std::vector<std::vector<double>>& matrixB);
-        static void generate_random_matrix(int size, std::vector<std::vector<double>>& matrix);
-        const std::vector<std::vector<double>>& get_result() const { return result; }
-        int get_rank() const { return world.rank(); }
-
     private:
-        boost::mpi::communicator world;
-        std::vector<std::vector<double>> A;
-        std::vector<std::vector<double>> B;
-        std::vector<std::vector<double>> result;
-        int n;
+        std::vector<double> matrix_add(const std::vector<double>& matrixA, const std::vector<double>& matrixB, size_t size);
+        std::vector<double> matrix_subtract(const std::vector<double>& matrixA, const std::vector<double>& matrixB, size_t size);
+        bool power_of_two(size_t number);
+        bool matrix_is_square(size_t matrixSize);
+        std::vector<double> strassen_multiply(const std::vector<double>& matrixA, const std::vector<double>& matrixB, size_t size);
+        std::vector<double> pad_matrix(const std::vector<double>& matrix, size_t original_size, size_t new_size);
 
-        void strassen_multiply(const std::vector<std::vector<double>>& local_A, const std::vector<std::vector<double>>& local_B, std::vector<std::vector<double>>& local_result, int size);
-        static void add_matrices(const std::vector<std::vector<double>>& A, const std::vector<std::vector<double>>& B, std::vector<std::vector<double>>& C, int size);
-        static void subtract_matrices(const std::vector<std::vector<double>>& A, const std::vector<std::vector<double>>& B, std::vector<std::vector<double>>& C, int size);
-        static void split_matrix(const std::vector<std::vector<double>>& A, std::vector<std::vector<double>>& A11, std::vector<std::vector<double>>& A12, std::vector<std::vector<double>>& A21, std::vector<std::vector<double>>& A22, int size);
-        static void join_matrices(const std::vector<std::vector<double>>& C11, const std::vector<std::vector<double>>& C12, const std::vector<std::vector<double>>& C21, const std::vector<std::vector<double>>& C22, std::vector<std::vector<double>>& C, int size);
-        void distribute_matrix(const std::vector<std::vector<double>>& matrix, std::vector<std::vector<double>>& distributed_matrix);
-        void gather_result(const std::vector<std::vector<double>>& local_result, std::vector<std::vector<double>>& result);
-        static void flatten_matrix(const std::vector<std::vector<double>>& matrix, std::vector<double>& flat_matrix);
-        static void unflatten_matrix(const std::vector<double>& flat_matrix, std::vector<std::vector<double>>& matrix, int rows, int cols);
+        std::vector<double> inputMatrixA;
+        std::vector<double> inputMatrixB;
+        std::vector<double> outputMatrix;
+        size_t matrixSize;
     };
 
 }  // namespace nasedkin_e_strassen_algorithm
