@@ -5,6 +5,7 @@
 #include <memory>
 #include <gtest/gtest.h>
 #include <boost/mpi/timer.hpp>
+#include "core/task/include/task.hpp"
 #include "mpi/nasedkin_e_strassen_algorithm/include/ops_mpi.hpp"
 
 std::vector<double> generate_random_matrix(size_t size) {
