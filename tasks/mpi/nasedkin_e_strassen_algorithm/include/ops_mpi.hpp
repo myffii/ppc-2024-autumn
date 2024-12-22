@@ -29,6 +29,8 @@ namespace nasedkin_e_strassen_algorithm {
                                           const std::vector<double>& matrixB, size_t size);
         static std::vector<double> pad_matrix(const std::vector<double>& matrix, size_t original_size, size_t new_size);
 
+        boost::mpi::communicator world;
+
         std::vector<double> inputMatrixA;
         std::vector<double> inputMatrixB;
         std::vector<double> outputMatrix;
