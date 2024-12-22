@@ -1,10 +1,12 @@
-#include "mpi/nasedkin_e_strassen_algorithm/include/ops_mpi.hpp"
-
-#include <cstddef>
+#include <vector>
+#include <cstdlib>
+#include <ctime>
 #include <cmath>
+#include <memory>
 #include <iostream>
 #include <boost/mpi/collectives.hpp>
 #include <boost/serialization/vector.hpp>
+#include "mpi/nasedkin_e_strassen_algorithm/include/ops_mpi.hpp"
 
 namespace nasedkin_e_strassen_algorithm {
 
@@ -69,7 +71,7 @@ namespace nasedkin_e_strassen_algorithm {
         return true;
     }
 
-    std::vector<double> StrassenAlgorithmMPI::matrix_add(const std::vector<double>& matrixA,
+    static std::vector<double> StrassenAlgorithmMPI::matrix_add(const std::vector<double>& matrixA,
                                    const std::vector<double>& matrixB,
                                    size_t size) {
         std::vector<double> result(size * size);
@@ -79,7 +81,7 @@ namespace nasedkin_e_strassen_algorithm {
         return result;
     }
 
-    std::vector<double> StrassenAlgorithmMPI::matrix_subtract(const std::vector<double>& matrixA,
+    static std::vector<double> StrassenAlgorithmMPI::matrix_subtract(const std::vector<double>& matrixA,
                                         const std::vector<double>& matrixB,
                                         size_t size) {
         std::vector<double> result(size * size);
@@ -89,20 +91,20 @@ namespace nasedkin_e_strassen_algorithm {
         return result;
     }
 
-    bool StrassenAlgorithmMPI::power_of_two(size_t number) {
+    static bool StrassenAlgorithmMPI::power_of_two(size_t number) {
         if (number == 0) {
             return false;
         }
         return (number & (number - 1)) == 0;
     }
 
-    bool StrassenAlgorithmMPI::matrix_is_square(size_t matrixSize) {
+    static bool StrassenAlgorithmMPI::matrix_is_square(size_t matrixSize) {
         size_t sqrt_val = static_cast<size_t>(std::sqrt(matrixSize));
 
         return sqrt_val * sqrt_val == matrixSize;
     }
 
-    std::vector<double> StrassenAlgorithmMPI::pad_matrix(const std::vector<double>& matrix, size_t original_size, size_t new_size) {
+    static std::vector<double> StrassenAlgorithmMPI::pad_matrix(const std::vector<double>& matrix, size_t original_size, size_t new_size) {
         std::vector<double> padded_matrix(new_size * new_size, 0.0);
         for (size_t i = 0; i < original_size; ++i) {
             for (size_t j = 0; j < original_size; ++j) {
@@ -110,6 +112,94 @@ namespace nasedkin_e_strassen_algorithm {
             }
         }
         return padded_matrix;
+    }
+
+    std::vector<double> strassen_base(const std::vector<double>& matrixA,
+                                      const std::vector<double>& matrixB, size_t size) {
+        if (size == 1) {
+            return {matrixA[0] * matrixB[0]};
+        }
+
+        size_t new_size = 1;
+        while (new_size < size) {
+            new_size *= 2;
+        }
+
+        std::vector<double> paddedA(new_size * new_size, 0.0);
+        std::vector<double> paddedB(new_size * new_size, 0.0);
+        for (size_t i = 0; i < size; ++i) {
+            for (size_t j = 0; j < size; ++j) {
+                paddedA[i * new_size + j] = matrixA[i * size + j];
+                paddedB[i * new_size + j] = matrixB[i * size + j];
+            }
+        }
+
+        std::vector<double> result = strassen_recursive(paddedA, paddedB, new_size);
+
+        std::vector<double> final_result(size * size);
+        for (size_t i = 0; i < size; ++i) {
+            for (size_t j = 0; j < size; ++j) {
+                final_result[i * size + j] = result[i * new_size + j];
+            }
+        }
+
+        return final_result;
+    }
+
+    std::vector<double> strassen_recursive(const std::vector<double>& matrixA,
+                                           const std::vector<double>& matrixB, size_t size) {
+        if (size == 1) {
+            return {matrixA[0] * matrixB[0]};
+        }
+
+        size_t half_size = size / 2;
+
+        std::vector<double> A11(half_size * half_size), A12(half_size * half_size),
+                A21(half_size * half_size), A22(half_size * half_size);
+        std::vector<double> B11(half_size * half_size), B12(half_size * half_size),
+                B21(half_size * half_size), B22(half_size * half_size);
+
+        for (size_t i = 0; i < half_size; ++i) {
+            for (size_t j = 0; j < half_size; ++j) {
+                A11[i * half_size + j] = matrixA[i * size + j];
+                A12[i * half_size + j] = matrixA[i * size + j + half_size];
+                A21[i * half_size + j] = matrixA[(i + half_size) * size + j];
+                A22[i * half_size + j] = matrixA[(i + half_size) * size + j + half_size];
+
+                B11[i * half_size + j] = matrixB[i * size + j];
+                B12[i * half_size + j] = matrixB[i * size + j + half_size];
+                B21[i * half_size + j] = matrixB[(i + half_size) * size + j];
+                B22[i * half_size + j] = matrixB[(i + half_size) * size + j + half_size];
+            }
+        }
+
+        std::vector<double> M1 = strassen_recursive(matrix_add(A11, A22, half_size),
+                                                    matrix_add(B11, B22, half_size), half_size);
+        std::vector<double> M2 = strassen_recursive(matrix_add(A21, A22, half_size), B11, half_size);
+        std::vector<double> M3 = strassen_recursive(A11, matrix_subtract(B12, B22, half_size), half_size);
+        std::vector<double> M4 = strassen_recursive(A22, matrix_subtract(B21, B11, half_size), half_size);
+        std::vector<double> M5 = strassen_recursive(matrix_add(A11, A12, half_size), B22, half_size);
+        std::vector<double> M6 = strassen_recursive(matrix_subtract(A21, A11, half_size),
+                                                    matrix_add(B11, B12, half_size), half_size);
+        std::vector<double> M7 = strassen_recursive(matrix_subtract(A12, A22, half_size),
+                                                    matrix_add(B21, B22, half_size), half_size);
+
+        std::vector<double> C11 = matrix_add(matrix_subtract(matrix_add(M1, M4, half_size), M5, half_size), M7, half_size);
+        std::vector<double> C12 = matrix_add(M3, M5, half_size);
+        std::vector<double> C21 = matrix_add(M2, M4, half_size);
+        std::vector<double> C22 = matrix_add(matrix_subtract(matrix_add(M1, M3, half_size), M2, half_size), M6, half_size);
+
+        std::vector<double> result(size * size);
+        for (size_t i = 0; i < half_size; ++i) {
+            for (size_t j = 0; j < half_size; ++j) {
+                result[i * size + j] = C11[i * half_size + j];
+                result[i * size + j + half_size] = C12[i * half_size + j];
+                result[(i + half_size) * size + j] = C21[i * half_size + j];
+                result[(i + half_size) * size + j + half_size] = C22[i * half_size + j];
+            }
+        }
+
+        return result;
     }
 
     std::vector<double> strassen_multiply(const std::vector<double>& matrixA,

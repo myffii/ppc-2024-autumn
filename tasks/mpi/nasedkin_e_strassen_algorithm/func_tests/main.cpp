@@ -1,3 +1,11 @@
+#include <vector>
+#include <cstdlib>
+#include <ctime>
+#include <cmath>
+#include <memory>
+#include <gtest/gtest.h>
+#include "mpi/nasedkin_e_strassen_algorithm/include/ops_mpi.hpp"
+
 std::vector<double> generate_random_matrix(size_t size) {
     std::vector<double> matrix(size * size);
     std::srand(std::time(nullptr));

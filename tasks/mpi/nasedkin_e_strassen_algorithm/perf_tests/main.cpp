@@ -1,10 +1,10 @@
+#include <vector>
+#include <cstdlib>
+#include <ctime>
+#include <cmath>
+#include <memory>
 #include <gtest/gtest.h>
-
-#include <boost/mpi/timer.hpp>
-
-#include "core/perf/include/perf.hpp"
 #include "mpi/nasedkin_e_strassen_algorithm/include/ops_mpi.hpp"
-#include "mpi/nasedkin_e_strassen_algorithm/src/ops_mpi.cpp"
 
 TEST(nasedkin_e_strassen_algorithm_mpi, test_pipeline_run) {
 auto taskData = std::make_shared<ppc::core::TaskData>();

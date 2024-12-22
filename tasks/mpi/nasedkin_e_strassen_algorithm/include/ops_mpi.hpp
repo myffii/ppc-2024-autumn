@@ -1,11 +1,11 @@
 #pragma once
 
-#include <boost/mpi/communicator.hpp>
+#include <vector>
 #include <cstdlib>
 #include <ctime>
+#include <cmath>
 #include <memory>
-#include <vector>
-
+#include <boost/mpi/communicator.hpp>
 #include "core/task/include/task.hpp"
 
 namespace nasedkin_e_strassen_algorithm {
@@ -20,12 +20,14 @@ namespace nasedkin_e_strassen_algorithm {
         bool post_processing() override;
 
     private:
-        std::vector<double> matrix_add(const std::vector<double>& matrixA, const std::vector<double>& matrixB, size_t size);
-        std::vector<double> matrix_subtract(const std::vector<double>& matrixA, const std::vector<double>& matrixB, size_t size);
-        bool power_of_two(size_t number);
-        bool matrix_is_square(size_t matrixSize);
+        static std::vector<double> matrix_add(const std::vector<double>& matrixA, const std::vector<double>& matrixB, size_t size);
+        static std::vector<double> matrix_subtract(const std::vector<double>& matrixA, const std::vector<double>& matrixB, size_t size);
+        static bool power_of_two(size_t number);
+        static bool matrix_is_square(size_t matrixSize);
         std::vector<double> strassen_multiply(const std::vector<double>& matrixA, const std::vector<double>& matrixB, size_t size);
-        std::vector<double> pad_matrix(const std::vector<double>& matrix, size_t original_size, size_t new_size);
+        std::vector<double> strassen_base(const std::vector<double>& matrixA,
+                                          const std::vector<double>& matrixB, size_t size);
+        static std::vector<double> pad_matrix(const std::vector<double>& matrix, size_t original_size, size_t new_size);
 
         std::vector<double> inputMatrixA;
         std::vector<double> inputMatrixB;
