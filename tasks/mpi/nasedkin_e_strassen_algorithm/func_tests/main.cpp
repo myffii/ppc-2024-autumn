@@ -22,10 +22,10 @@ TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_2x2) {
     std::vector<double> matrixA = generate_random_matrix(size);
     std::vector<double> matrixB = generate_random_matrix(size);
 
-    taskData->inputs.push_back(matrixA.data());
-    taskData->inputs.push_back(matrixB.data());
-    taskData->inputs_count.push_back(size * size);
-    taskData->inputs_count.push_back(size * size);
+    taskData->inputs.emplace_back(matrixA.data());
+    taskData->inputs.emplace_back(matrixB.data());
+    taskData->inputs_count.emplace_back(size * size);
+    taskData->inputs_count.emplace_back(size * size);
 
     nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI strassen_task(taskData);
 
@@ -42,10 +42,10 @@ TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_4x4) {
     std::vector<double> matrixA = generate_random_matrix(size);
     std::vector<double> matrixB = generate_random_matrix(size);
 
-    taskData->inputs.push_back(matrixA.data());
-    taskData->inputs.push_back(matrixB.data());
-    taskData->inputs_count.push_back(size * size);
-    taskData->inputs_count.push_back(size * size);
+    taskData->inputs.emplace_back(matrixA.data());
+    taskData->inputs.emplace_back(matrixB.data());
+    taskData->inputs_count.emplace_back(size * size);
+    taskData->inputs_count.emplace_back(size * size);
 
     nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI strassen_task(taskData);
 
@@ -62,10 +62,10 @@ TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_8x8) {
     std::vector<double> matrixA = generate_random_matrix(size);
     std::vector<double> matrixB = generate_random_matrix(size);
 
-    taskData->inputs.push_back(matrixA.data());
-    taskData->inputs.push_back(matrixB.data());
-    taskData->inputs_count.push_back(size * size);
-    taskData->inputs_count.push_back(size * size);
+    taskData->inputs.emplace_back(matrixA.data());
+    taskData->inputs.emplace_back(matrixB.data());
+    taskData->inputs_count.emplace_back(size * size);
+    taskData->inputs_count.emplace_back(size * size);
 
     nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI strassen_task(taskData);
 
@@ -82,10 +82,10 @@ TEST(nasedkin_e_strassen_algorithm_mpi, test_random_matrix_16x16) {
     std::vector<double> matrixA = generate_random_matrix(size);
     std::vector<double> matrixB = generate_random_matrix(size);
 
-    taskData->inputs.push_back(matrixA.data());
-    taskData->inputs.push_back(matrixB.data());
-    taskData->inputs_count.push_back(size * size);
-    taskData->inputs_count.push_back(size * size);
+    taskData->inputs.emplace_back(matrixA.data());
+    taskData->inputs.emplace_back(matrixB.data());
+    taskData->inputs_count.emplace_back(size * size);
+    taskData->inputs_count.emplace_back(size * size);
 
     nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI strassen_task(taskData);
 

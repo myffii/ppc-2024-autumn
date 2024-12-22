@@ -15,7 +15,6 @@ std::vector<double> generate_random_matrix(size_t size) {
     return matrix;
 }
 
-
 TEST(nasedkin_e_strassen_algorithm_mpi, test_pipeline_run) {
     auto taskData = std::make_shared<ppc::core::TaskData>();
 
@@ -23,10 +22,10 @@ TEST(nasedkin_e_strassen_algorithm_mpi, test_pipeline_run) {
     std::vector<double> matrixA = generate_random_matrix(size);
     std::vector<double> matrixB = generate_random_matrix(size);
 
-    taskData->inputs.push_back(matrixA.data());
-    taskData->inputs.push_back(matrixB.data());
-    taskData->inputs_count.push_back(size * size);
-    taskData->inputs_count.push_back(size * size);
+    taskData->inputs.emplace_back(matrixA.data());
+    taskData->inputs.emplace_back(matrixB.data());
+    taskData->inputs_count.emplace_back(size * size);
+    taskData->inputs_count.emplace_back(size * size);
 
     auto strassenTask = std::make_shared<nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI>(taskData);
 
@@ -47,4 +46,33 @@ TEST(nasedkin_e_strassen_algorithm_mpi, test_pipeline_run) {
     perfAnalyzer->pipeline_run(perfAttr, perfResults);
 
     ppc::core::Perf::print_perf_statistic(perfResults);
+}
+
+TEST(nasedkin_e_strassen_algorithm_mpi, test_task_run) {
+    auto taskData = std::make_shared<ppc::core::TaskData>();
+
+    size_t size = 16;
+    std::vector<double> matrixA = generate_random_matrix(size);
+    std::vector<double> matrixB = generate_random_matrix(size);
+
+    taskData->inputs.emplace_back(matrixA.data());
+    taskData->inputs.emplace_back(matrixB.data());
+    taskData->inputs_count.emplace_back(size * size);
+    taskData->inputs_count.emplace_back(size * size);
+
+    auto strassenTask = std::make_shared<nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI>(taskData);
+
+    ASSERT_TRUE(strassenTask->validation()) << "Validation failed for valid input";
+
+    const boost::mpi::timer timer;
+    strassenTask->pre_processing();
+    strassenTask->run();
+    strassenTask->post_processing();
+    double elapsed_time = timer.elapsed();
+
+    std::cout << "Task execution time: " << elapsed_time << " seconds" << std::endl;
+
+    ASSERT_TRUE(strassenTask->pre_processing()) << "Pre-processing failed";
+    ASSERT_TRUE(strassenTask->run()) << "Run failed";
+    ASSERT_TRUE(strassenTask->post_processing()) << "Post-processing failed";
 }
