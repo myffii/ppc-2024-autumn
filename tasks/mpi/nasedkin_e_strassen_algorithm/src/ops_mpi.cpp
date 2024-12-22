@@ -99,37 +99,6 @@ namespace nasedkin_e_strassen_algorithm {
         return padded_matrix;
     }
 
-    std::vector<double> strassen_base(const std::vector<double>& matrixA,
-                                      const std::vector<double>& matrixB, size_t size) {
-        if (size == 1) {
-            return {matrixA[0] * matrixB[0]};
-        }
-
-        size_t new_size = 1;
-        while (new_size < size) {
-            new_size *= 2;
-        }
-
-        std::vector<double> paddedA(new_size * new_size, 0.0);
-        std::vector<double> paddedB(new_size * new_size, 0.0);
-        for (size_t i = 0; i < size; ++i) {
-            for (size_t j = 0; j < size; ++j) {
-                paddedA[i * new_size + j] = matrixA[i * size + j];
-                paddedB[i * new_size + j] = matrixB[i * size + j];
-            }
-        }
-
-        std::vector<double> result = strassen_recursive(paddedA, paddedB, new_size);
-
-        std::vector<double> final_result(size * size);
-        for (size_t i = 0; i < size; ++i) {
-            for (size_t j = 0; j < size; ++j) {
-                final_result[i * size + j] = result[i * new_size + j];
-            }
-        }
-
-        return final_result;
-    }
 
     std::vector<double> strassen_recursive(const std::vector<double>& matrixA,
                                            const std::vector<double>& matrixB, size_t size) {
@@ -139,10 +108,15 @@ namespace nasedkin_e_strassen_algorithm {
 
         size_t half_size = size / 2;
 
-        std::vector<double> A11(half_size * half_size), A12(half_size * half_size),
-                A21(half_size * half_size), A22(half_size * half_size);
-        std::vector<double> B11(half_size * half_size), B12(half_size * half_size),
-                B21(half_size * half_size), B22(half_size * half_size);
+        std::vector<double> A11(half_size * half_size);
+        std::vector<double> A12(half_size * half_size);
+        std::vector<double> A21(half_size * half_size);
+        std::vector<double> A22(half_size * half_size);
+
+        std::vector<double> B11(half_size * half_size);
+        std::vector<double> B12(half_size * half_size);
+        std::vector<double> B21(half_size * half_size);
+        std::vector<double> B22(half_size * half_size);
 
         for (size_t i = 0; i < half_size; ++i) {
             for (size_t j = 0; j < half_size; ++j) {
@@ -185,6 +159,38 @@ namespace nasedkin_e_strassen_algorithm {
         }
 
         return result;
+    }
+
+    std::vector<double> strassen_base(const std::vector<double>& matrixA,
+                                      const std::vector<double>& matrixB, size_t size) {
+        if (size == 1) {
+            return {matrixA[0] * matrixB[0]};
+        }
+
+        size_t new_size = 1;
+        while (new_size < size) {
+            new_size *= 2;
+        }
+
+        std::vector<double> paddedA(new_size * new_size, 0.0);
+        std::vector<double> paddedB(new_size * new_size, 0.0);
+        for (size_t i = 0; i < size; ++i) {
+            for (size_t j = 0; j < size; ++j) {
+                paddedA[i * new_size + j] = matrixA[i * size + j];
+                paddedB[i * new_size + j] = matrixB[i * size + j];
+            }
+        }
+
+        std::vector<double> result = strassen_recursive(paddedA, paddedB, new_size);
+
+        std::vector<double> final_result(size * size);
+        for (size_t i = 0; i < size; ++i) {
+            for (size_t j = 0; j < size; ++j) {
+                final_result[i * size + j] = result[i * new_size + j];
+            }
+        }
+
+        return final_result;
     }
 
     std::vector<double> strassen_multiply(const std::vector<double>& matrixA,
