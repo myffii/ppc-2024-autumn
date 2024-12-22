@@ -56,7 +56,6 @@ TEST(nasedkin_e_strassen_algorithm_mpi, test_task_run) {
     std::vector<double> matrixA = generate_random_matrix(size);
     std::vector<double> matrixB = generate_random_matrix(size);
 
-    // Используем reinterpret_cast<uint8_t*> для преобразования double* в uint8_t*
     taskData->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixA.data()));
     taskData->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixB.data()));
     taskData->inputs_count.emplace_back(size * size);
@@ -71,8 +70,6 @@ TEST(nasedkin_e_strassen_algorithm_mpi, test_task_run) {
     strassenTask->run();
     strassenTask->post_processing();
     double elapsed_time = timer.elapsed();
-
-    std::cout << "Task execution time: " << elapsed_time << " seconds" << std::endl;
 
     ASSERT_TRUE(strassenTask->pre_processing()) << "Pre-processing failed";
     ASSERT_TRUE(strassenTask->run()) << "Run failed";
