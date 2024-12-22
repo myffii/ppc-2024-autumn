@@ -11,9 +11,9 @@
 namespace nasedkin_e_strassen_algorithm {
 
     bool StrassenAlgorithmMPI::pre_processing() {
+        internal_order_test();
         int rank = world.rank();
         if (rank == 0) {
-            auto taskData = this->getTaskData();
             auto* inputsA = reinterpret_cast<double*>(taskData->inputs[0]);
             auto* inputsB = reinterpret_cast<double*>(taskData->inputs[1]);
 
@@ -31,11 +31,11 @@ namespace nasedkin_e_strassen_algorithm {
     }
 
     bool StrassenAlgorithmMPI::validation() {
+        internal_order_test();
         int rank = world.rank();
         if (rank == 0) {
-            auto taskData = this->getTaskData();
             return !taskData->inputs.empty() && taskData->inputs_count[0] == taskData->inputs_count[1] &&
-                   is_square_matrix_size(taskData->inputs_count[0]) && taskData->inputs_count[0] == taskData->outputs_count[0];
+                   matrix_is_square(taskData->inputs_count[0]) && taskData->inputs_count[0] == taskData->outputs_count[0];
         }
         return true;
     }
@@ -47,9 +47,9 @@ namespace nasedkin_e_strassen_algorithm {
     }
 
     bool StrassenAlgorithmMPI::post_processing() {
+        internal_order_test();
         int rank = world.rank();
         if (rank == 0) {
-            auto taskData = this->getTaskData();
             auto* outputs = reinterpret_cast<double*>(taskData->outputs[0]);
             std::copy(outputMatrix.begin(), outputMatrix.end(), outputs);
         }
