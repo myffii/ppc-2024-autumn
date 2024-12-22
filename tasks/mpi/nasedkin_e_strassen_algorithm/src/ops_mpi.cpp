@@ -99,7 +99,6 @@ namespace nasedkin_e_strassen_algorithm {
         return padded_matrix;
     }
 
-
     std::vector<double> strassen_recursive(const std::vector<double>& matrixA,
                                            const std::vector<double>& matrixB, size_t size) {
         if (size == 1) {
