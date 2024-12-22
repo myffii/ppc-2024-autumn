@@ -6,6 +6,15 @@
 #include <gtest/gtest.h>
 #include "mpi/nasedkin_e_strassen_algorithm/include/ops_mpi.hpp"
 
+double* generate_random_matrix(size_t size) {
+    auto* matrix = new double[size * size];
+    std::srand(std::time(nullptr));
+    for (size_t i = 0; i < size * size; ++i) {
+        matrix[i] = static_cast<double>(std::rand()) / RAND_MAX;
+    }
+    return matrix;
+}
+
 TEST(nasedkin_e_strassen_algorithm_mpi, test_pipeline_run) {
 auto taskData = std::make_shared<ppc::core::TaskData>();
 

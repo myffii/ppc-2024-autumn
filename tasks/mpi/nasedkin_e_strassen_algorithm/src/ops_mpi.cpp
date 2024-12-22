@@ -84,7 +84,7 @@ namespace nasedkin_e_strassen_algorithm {
     }
 
     bool StrassenAlgorithmMPI::matrix_is_square(size_t matrixSize) {
-        auto size_t sqrt_val = static_cast<size_t>(std::sqrt(matrixSize));
+        auto sqrt_val = static_cast<size_t>(std::sqrt(matrixSize));
 
         return sqrt_val * sqrt_val == matrixSize;
     }
@@ -269,7 +269,8 @@ namespace nasedkin_e_strassen_algorithm {
 
         for (int i = 0; i < 7; ++i) {
             if (i % num_procs == rank) {
-                std::vector<double> taskA, taskB;
+                std::vector<double> taskA;
+                std::vector<double> taskB;
                 world.recv(0, 0, taskA);
                 world.recv(0, 0, taskB);
                 M[i] = strassen_base(taskA, taskB, half_size);
