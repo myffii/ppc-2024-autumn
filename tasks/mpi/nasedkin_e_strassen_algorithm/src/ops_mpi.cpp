@@ -84,7 +84,7 @@ namespace nasedkin_e_strassen_algorithm {
     }
 
     bool StrassenAlgorithmMPI::matrix_is_square(size_t matrixSize) {
-        size_t sqrt_val = static_cast<size_t>(std::sqrt(matrixSize));
+        auto size_t sqrt_val = static_cast<size_t>(std::sqrt(matrixSize));
 
         return sqrt_val * sqrt_val == matrixSize;
     }
