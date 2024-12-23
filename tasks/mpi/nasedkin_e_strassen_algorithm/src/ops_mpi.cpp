@@ -6,14 +6,15 @@
 #include <iostream>
 #include <boost/mpi/collectives.hpp>
 #include <boost/serialization/vector.hpp>
+#include <boost/mpi/communicator.hpp>
 #include "mpi/nasedkin_e_strassen_algorithm/include/ops_mpi.hpp"
 
 namespace nasedkin_e_strassen_algorithm {
 
     bool StrassenAlgorithmMPI::pre_processing() {
+        internal_order_test();
         int rank = world.rank();
         if (rank == 0) {
-            auto taskData = this->getTaskData();
             auto* inputsA = reinterpret_cast<double*>(taskData->inputs[0]);
             auto* inputsB = reinterpret_cast<double*>(taskData->inputs[1]);
 
@@ -31,11 +32,11 @@ namespace nasedkin_e_strassen_algorithm {
     }
 
     bool StrassenAlgorithmMPI::validation() {
+        internal_order_test();
         int rank = world.rank();
         if (rank == 0) {
-            auto taskData = this->getTaskData();
             return !taskData->inputs.empty() && taskData->inputs_count[0] == taskData->inputs_count[1] &&
-                   is_square_matrix_size(taskData->inputs_count[0]) && taskData->inputs_count[0] == taskData->outputs_count[0];
+                   matrix_is_square(taskData->inputs_count[0]) && taskData->inputs_count[0] == taskData->outputs_count[0];
         }
         return true;
     }
@@ -47,9 +48,9 @@ namespace nasedkin_e_strassen_algorithm {
     }
 
     bool StrassenAlgorithmMPI::post_processing() {
+        internal_order_test();
         int rank = world.rank();
         if (rank == 0) {
-            auto taskData = this->getTaskData();
             auto* outputs = reinterpret_cast<double*>(taskData->outputs[0]);
             std::copy(outputMatrix.begin(), outputMatrix.end(), outputs);
         }
@@ -99,8 +100,7 @@ namespace nasedkin_e_strassen_algorithm {
         return padded_matrix;
     }
 
-
-    std::vector<double> strassen_recursive(const std::vector<double>& matrixA,
+    std::vector<double> StrassenAlgorithmMPI::strassen_recursive(const std::vector<double>& matrixA,
                                            const std::vector<double>& matrixB, size_t size) {
         if (size == 1) {
             return {matrixA[0] * matrixB[0]};
@@ -161,7 +161,7 @@ namespace nasedkin_e_strassen_algorithm {
         return result;
     }
 
-    std::vector<double> strassen_base(const std::vector<double>& matrixA,
+    std::vector<double> StrassenAlgorithmMPI::strassen_base(const std::vector<double>& matrixA,
                                       const std::vector<double>& matrixB, size_t size) {
         if (size == 1) {
             return {matrixA[0] * matrixB[0]};
@@ -193,7 +193,7 @@ namespace nasedkin_e_strassen_algorithm {
         return final_result;
     }
 
-    std::vector<double> strassen_multiply(const std::vector<double>& matrixA,
+    std::vector<double> StrassenAlgorithmMPI::strassen_multiply(const std::vector<double>& matrixA,
                                           const std::vector<double>& matrixB, size_t size) {
         boost::mpi::environment env;
         boost::mpi::communicator world;
