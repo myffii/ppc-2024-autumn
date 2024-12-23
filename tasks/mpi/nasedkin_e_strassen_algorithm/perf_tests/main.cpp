@@ -33,13 +33,10 @@ TEST(nasedkin_e_strassen_algorithm_mpi, test_pipeline_run) {
 
     ASSERT_TRUE(strassenTask->validation()) << "Validation failed for valid input";
 
-    strassenTask->pre_processing();
-    strassenTask->run();
-    strassenTask->post_processing();
+    const boost::mpi::timer current_timer;
 
     auto perfAttr = std::make_shared<ppc::core::PerfAttr>();
     perfAttr->num_running = 10;
-    const boost::mpi::timer current_timer;
     perfAttr->current_timer = [&] { return current_timer.elapsed(); };
 
     auto perfResults = std::make_shared<ppc::core::PerfResults>();
@@ -67,9 +64,11 @@ TEST(nasedkin_e_strassen_algorithm_mpi, test_task_run) {
     ASSERT_TRUE(strassenTask->validation()) << "Validation failed for valid input";
 
     const boost::mpi::timer timer;
+
     strassenTask->pre_processing();
     strassenTask->run();
     strassenTask->post_processing();
+
     double elapsed_time = timer.elapsed();
 
     ASSERT_TRUE(strassenTask->pre_processing()) << "Pre-processing failed";
