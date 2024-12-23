@@ -34,7 +34,7 @@ TEST(nasedkin_e_strassen_algorithm_mpi, test_pipeline_run) {
 
     ASSERT_TRUE(strassenTask->validation()) << "Validation failed for valid input";
 
-    boost::mpi::timer current_timer;
+    const boost::mpi::timer current_timer;
 
     auto perfAttr = std::make_shared<ppc::core::PerfAttr>();
     perfAttr->num_running = 10;
@@ -55,24 +55,26 @@ TEST(nasedkin_e_strassen_algorithm_mpi, test_task_run) {
     std::vector<double> matrixA = generate_random_matrix(size);
     std::vector<double> matrixB = generate_random_matrix(size);
 
+    if (world.rank() == 0) {
     taskData->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixA.data()));
     taskData->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixB.data()));
     taskData->inputs_count.emplace_back(size * size);
     taskData->inputs_count.emplace_back(size * size);
+    }
 
     auto strassenTask = std::make_shared<nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI>(taskData);
 
-    ASSERT_TRUE(strassenTask->validation()) << "Validation failed for valid input";
+    ASSERT_TRUE(strassenTask->validation());
+    ASSERT_TRUE(strassenTask->pre_processing());
+    ASSERT_TRUE(strassenTask->run());
+    ASSERT_TRUE(strassenTask->post_processing());
 
-    const boost::mpi::timer timer;
+    auto perfAttr = std::make_shared<ppc::core::PerfAttr>();
+    perfAttr->num_running = 10;
+    const boost::mpi::timer current_timer;
+    perfAttr->current_timer = [&] { return current_timer.elapsed(); };
 
-    strassenTask->pre_processing();
-    strassenTask->run();
-    strassenTask->post_processing();
-
-    double elapsed_time = timer.elapsed();
-
-    ASSERT_TRUE(strassenTask->pre_processing()) << "Pre-processing failed";
-    ASSERT_TRUE(strassenTask->run()) << "Run failed";
-    ASSERT_TRUE(strassenTask->post_processing()) << "Post-processing failed";
+    auto perfResults = std::make_shared<ppc::core::PerfResults>();
+    auto perfAnalyzer = std::make_shared<ppc::core::Perf>(strassenTask);
+    perfAnalyzer->task_run(perfAttr, perfResults);
 }
