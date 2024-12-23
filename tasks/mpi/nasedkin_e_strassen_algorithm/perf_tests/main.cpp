@@ -1,80 +1,96 @@
-#include <vector>
-#include <cstdlib>
-#include <ctime>
-#include <cmath>
-#include <memory>
 #include <gtest/gtest.h>
+
 #include <boost/mpi/timer.hpp>
-#include <boost/mpi/communicator.hpp>
+#include <vector>
+#include <random>
 #include "core/perf/include/perf.hpp"
 #include "mpi/nasedkin_e_strassen_algorithm/include/ops_mpi.hpp"
 
-std::vector<double> generate_random_matrix(size_t size) {
-    std::vector<double> matrix(size * size);
-    std::srand(std::time(nullptr));
-    for (size_t i = 0; i < size * size; ++i) {
-        matrix[i] = static_cast<double>(std::rand()) / RAND_MAX;
-    }
-    return matrix;
+std::vector<double> generateRandomMatrix(int size) {
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::uniform_real_distribution<> dis(-100.0, 100.0);
+  std::vector<double> matrix(size * size);
+  for (int i = 0; i < size * size; i++) {
+    matrix[i] = dis(gen);
+  }
+  return matrix;
 }
 
-TEST(nasedkin_e_strassen_algorithm_mpi, test_pipeline_run) {
-    auto taskData = std::make_shared<ppc::core::TaskData>();
+TEST(nasedkin_e_strassen_algorithm_perf_test, test_pipeline_run) {
+  int matrixSize = 1024;
+  boost::mpi::communicator world;
+  std::vector<double> matrixA = generateRandomMatrix(matrixSize);
+  std::vector<double> matrixB = generateRandomMatrix(matrixSize);
+  std::vector<double> resultParallel(matrixSize * matrixSize, 0.0);
 
-    size_t size = 8;
-    std::vector<double> matrixA = generate_random_matrix(size);
-    std::vector<double> matrixB = generate_random_matrix(size);
+  std::shared_ptr<ppc::core::TaskData> taskDataParallel = std::make_shared<ppc::core::TaskData>();
 
-    taskData->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixA.data()));
-    taskData->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixB.data()));
-    taskData->inputs_count.emplace_back(size * size);
-    taskData->inputs_count.emplace_back(size * size);
+  if (world.rank() == 0) {
+    taskDataParallel->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixA.data()));
+    taskDataParallel->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixB.data()));
+    taskDataParallel->inputs_count.emplace_back(matrixA.size());
+    taskDataParallel->inputs_count.emplace_back(matrixB.size());
+    taskDataParallel->outputs.emplace_back(reinterpret_cast<uint8_t*>(resultParallel.data()));
+    taskDataParallel->outputs_count.emplace_back(resultParallel.size());
+  }
 
-    auto strassenTask = std::make_shared<nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI>(taskData);
+  auto testMpiTaskParallel = std::make_shared<nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI>(taskDataParallel);
+  ASSERT_EQ(testMpiTaskParallel->validation(), true);
+  testMpiTaskParallel->pre_processing();
+  testMpiTaskParallel->run();
+  testMpiTaskParallel->post_processing();
 
-    ASSERT_TRUE(strassenTask->validation()) << "Validation failed for valid input";
+  auto perfAttr = std::make_shared<ppc::core::PerfAttr>();
+  perfAttr->num_running = 10;
+  const boost::mpi::timer currentTimer;
+  perfAttr->current_timer = [&] { return currentTimer.elapsed(); };
 
-    const boost::mpi::timer current_timer;
+  auto perfResults = std::make_shared<ppc::core::PerfResults>();
 
-    auto perfAttr = std::make_shared<ppc::core::PerfAttr>();
-    perfAttr->num_running = 10;
-    perfAttr->current_timer = [&] { return current_timer.elapsed(); };
+  auto perfAnalyzer = std::make_shared<ppc::core::Perf>(testMpiTaskParallel);
+  perfAnalyzer->pipeline_run(perfAttr, perfResults);
 
-    auto perfResults = std::make_shared<ppc::core::PerfResults>();
-
-    auto perfAnalyzer = std::make_shared<ppc::core::Perf>(strassenTask);
-    perfAnalyzer->pipeline_run(perfAttr, perfResults);
-
+  if (world.rank() == 0) {
     ppc::core::Perf::print_perf_statistic(perfResults);
+  }
 }
 
-TEST(nasedkin_e_strassen_algorithm_mpi, test_task_run) {
-    auto taskData = std::make_shared<ppc::core::TaskData>();
+TEST(nasedkin_e_strassen_algorithm_perf_test, test_task_run) {
+  int matrixSize = 1024;
+  boost::mpi::communicator world;
+  std::vector<double> matrixA = generateRandomMatrix(matrixSize);
+  std::vector<double> matrixB = generateRandomMatrix(matrixSize);
+  std::vector<double> resultParallel(matrixSize * matrixSize, 0.0);
 
-    size_t size = 16;
-    std::vector<double> matrixA = generate_random_matrix(size);
-    std::vector<double> matrixB = generate_random_matrix(size);
+  std::shared_ptr<ppc::core::TaskData> taskDataParallel = std::make_shared<ppc::core::TaskData>();
 
-    if (world.rank() == 0) {
-    taskData->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixA.data()));
-    taskData->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixB.data()));
-    taskData->inputs_count.emplace_back(size * size);
-    taskData->inputs_count.emplace_back(size * size);
-    }
+  if (world.rank() == 0) {
+    taskDataParallel->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixA.data()));
+    taskDataParallel->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixB.data()));
+    taskDataParallel->inputs_count.emplace_back(matrixA.size());
+    taskDataParallel->inputs_count.emplace_back(matrixB.size());
+    taskDataParallel->outputs.emplace_back(reinterpret_cast<uint8_t*>(resultParallel.data()));
+    taskDataParallel->outputs_count.emplace_back(resultParallel.size());
+  }
 
-    auto strassenTask = std::make_shared<nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI>(taskData);
+  auto testMpiTaskParallel = std::make_shared<nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI>(taskDataParallel);
+  ASSERT_EQ(testMpiTaskParallel->validation(), true);
+  testMpiTaskParallel->pre_processing();
+  testMpiTaskParallel->run();
+  testMpiTaskParallel->post_processing();
 
-    ASSERT_TRUE(strassenTask->validation());
-    ASSERT_TRUE(strassenTask->pre_processing());
-    ASSERT_TRUE(strassenTask->run());
-    ASSERT_TRUE(strassenTask->post_processing());
+  auto perfAttr = std::make_shared<ppc::core::PerfAttr>();
+  perfAttr->num_running = 10;
+  const boost::mpi::timer currentTimer;
+  perfAttr->current_timer = [&] { return currentTimer.elapsed(); };
 
-    auto perfAttr = std::make_shared<ppc::core::PerfAttr>();
-    perfAttr->num_running = 10;
-    const boost::mpi::timer current_timer;
-    perfAttr->current_timer = [&] { return current_timer.elapsed(); };
+  auto perfResults = std::make_shared<ppc::core::PerfResults>();
 
-    auto perfResults = std::make_shared<ppc::core::PerfResults>();
-    auto perfAnalyzer = std::make_shared<ppc::core::Perf>(strassenTask);
-    perfAnalyzer->task_run(perfAttr, perfResults);
+  auto perfAnalyzer = std::make_shared<ppc::core::Perf>(testMpiTaskParallel);
+  perfAnalyzer->task_run(perfAttr, perfResults);
+
+  if (world.rank() == 0) {
+    ppc::core::Perf::print_perf_statistic(perfResults);
+  }
 }
