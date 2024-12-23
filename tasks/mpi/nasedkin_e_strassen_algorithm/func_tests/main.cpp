@@ -4,6 +4,7 @@
 #include <cmath>
 #include <memory>
 #include <gtest/gtest.h>
+#include <boost/mpi/communicator.hpp>
 #include "mpi/nasedkin_e_strassen_algorithm/include/ops_mpi.hpp"
 
 std::vector<double> generate_random_matrix(size_t size) {

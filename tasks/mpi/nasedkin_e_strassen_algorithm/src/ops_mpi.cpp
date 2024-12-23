@@ -6,6 +6,7 @@
 #include <iostream>
 #include <boost/mpi/collectives.hpp>
 #include <boost/serialization/vector.hpp>
+#include <boost/mpi/communicator.hpp>
 #include "mpi/nasedkin_e_strassen_algorithm/include/ops_mpi.hpp"
 
 namespace nasedkin_e_strassen_algorithm {

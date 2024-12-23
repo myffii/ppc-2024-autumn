@@ -5,6 +5,7 @@
 #include <memory>
 #include <gtest/gtest.h>
 #include <boost/mpi/timer.hpp>
+#include <boost/mpi/communicator.hpp>
 #include "core/perf/include/perf.hpp"
 #include "mpi/nasedkin_e_strassen_algorithm/include/ops_mpi.hpp"
 
@@ -33,7 +34,7 @@ TEST(nasedkin_e_strassen_algorithm_mpi, test_pipeline_run) {
 
     ASSERT_TRUE(strassenTask->validation()) << "Validation failed for valid input";
 
-    const boost::mpi::timer current_timer;
+    boost::mpi::timer current_timer;
 
     auto perfAttr = std::make_shared<ppc::core::PerfAttr>();
     perfAttr->num_running = 10;
