@@ -52,5 +52,4 @@ namespace nasedkin_e_strassen_algorithm {
                                                   const std::vector<double>& matrixB, size_t size);
     std::vector<double> matrix_add(const std::vector<double>& matrixA, const std::vector<double>& matrixB, size_t size);
     std::vector<double> matrix_subtract(const std::vector<double>& matrixA, const std::vector<double>& matrixB, size_t size);
-    std::vector<double> pad_matrix(const std::vector<double>& matrix, size_t original_size, size_t new_size);
 }  // namespace nasedkin_e_strassen_algorithm

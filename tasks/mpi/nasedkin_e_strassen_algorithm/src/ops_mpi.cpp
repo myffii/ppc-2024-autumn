@@ -55,10 +55,6 @@ namespace nasedkin_e_strassen_algorithm {
                 std::cout << "Validation failed: Input sizes do not match." << std::endl;
                 return false;
             }
-            if (taskData->inputs_count[0] != taskData->outputs_count[0]) {
-                std::cout << "Validation failed: Input and output sizes do not match." << std::endl;
-                return false;
-            }
             std::cout << "Validation passed." << std::endl;
 
         return true;
@@ -129,10 +125,6 @@ bool StrassenAlgorithmMPI::pre_processing() {
         }
         if (taskData->inputs_count[0] != taskData->inputs_count[1]) {
           std::cout << "Validation failed: Input sizes do not match." << std::endl;
-          return false;
-        }
-        if (taskData->inputs_count[0] != taskData->outputs_count[0]) {
-          std::cout << "Validation failed: Input and output sizes do not match." << std::endl;
           return false;
         }
         std::cout << "Validation passed." << std::endl;
@@ -251,19 +243,6 @@ bool StrassenAlgorithmMPI::pre_processing() {
         return local_result;
     }
 
-    std::vector<double> pad_matrix(const std::vector<double>& matrix, size_t original_size, size_t new_size) {
-        std::cout << "Pad_matrix: Padding matrix from size " << original_size << " to " << new_size << std::endl;
-        std::vector<double> padded_matrix(new_size * new_size, 0.0);
-        for (size_t i = 0; i < original_size; ++i) {
-            for (size_t j = 0; j < original_size; ++j) {
-                padded_matrix[i * new_size + j] = matrix[i * original_size + j];
-            }
-        }
-
-        std::cout << "Pad_matrix: Padding completed." << std::endl;
-        return padded_matrix;
-    }
-
     std::vector<double> StrassenAlgorithmSEQ::strassen_multiply_seq(const std::vector<double>& matrixA,
                                                                 const std::vector<double>& matrixB, size_t size) {
 
@@ -286,9 +265,6 @@ bool StrassenAlgorithmMPI::pre_processing() {
 
         size_t half_size = new_size / 2;
 
-        std::vector<double> paddedA = pad_matrix(matrixA, size, new_size);
-        std::vector<double> paddedB = pad_matrix(matrixB, size, new_size);
-
         std::vector<double> A11(half_size * half_size);
         std::vector<double> A12(half_size * half_size);
         std::vector<double> A21(half_size * half_size);
@@ -299,23 +275,17 @@ bool StrassenAlgorithmMPI::pre_processing() {
         std::vector<double> B21(half_size * half_size);
         std::vector<double> B22(half_size * half_size);
 
-        if (paddedA.size() != new_size * new_size || paddedB.size() != new_size * new_size) {
-            std::cout << "Strassen_multiply: Padded matrix size mismatch. Expected: " << new_size * new_size
-                      << ", got: " << paddedA.size() << " and " << paddedB.size() << std::endl;
-            return {};
-        }
-
         for (size_t i = 0; i < half_size; ++i) {
             for (size_t j = 0; j < half_size; ++j) {
-                A11[i * half_size + j] = paddedA[i * new_size + j];
-                A12[i * half_size + j] = paddedA[i * new_size + j + half_size];
-                A21[i * half_size + j] = paddedA[(i + half_size) * new_size + j];
-                A22[i * half_size + j] = paddedA[(i + half_size) * new_size + j + half_size];
+                A11[i * half_size + j] = matrixA[i * new_size + j];
+                A12[i * half_size + j] = matrixA[i * new_size + j + half_size];
+                A21[i * half_size + j] = matrixA[(i + half_size) * new_size + j];
+                A22[i * half_size + j] = matrixA[(i + half_size) * new_size + j + half_size];
 
-                B11[i * half_size + j] = paddedB[i * new_size + j];
-                B12[i * half_size + j] = paddedB[i * new_size + j + half_size];
-                B21[i * half_size + j] = paddedB[(i + half_size) * new_size + j];
-                B22[i * half_size + j] = paddedB[(i + half_size) * new_size + j + half_size];
+                B11[i * half_size + j] = matrixB[i * new_size + j];
+                B12[i * half_size + j] = matrixB[i * new_size + j + half_size];
+                B21[i * half_size + j] = matrixB[(i + half_size) * new_size + j];
+                B22[i * half_size + j] = matrixB[(i + half_size) * new_size + j + half_size];
             }
         }
 
@@ -417,11 +387,6 @@ bool StrassenAlgorithmMPI::pre_processing() {
 
       size_t half_size = new_size / 2;
 
-        std::cout << "Strassen_multiply: Padding matrices to size " << new_size << std::endl;
-
-        std::vector<double> paddedA = pad_matrix(matrixA, size, new_size);
-        std::vector<double> paddedB = pad_matrix(matrixB, size, new_size);
-
         std::vector<double> A11(half_size * half_size);
         std::vector<double> A12(half_size * half_size);
         std::vector<double> A21(half_size * half_size);
@@ -432,25 +397,19 @@ bool StrassenAlgorithmMPI::pre_processing() {
         std::vector<double> B21(half_size * half_size);
         std::vector<double> B22(half_size * half_size);
 
-        if (paddedA.size() != new_size * new_size || paddedB.size() != new_size * new_size) {
-            std::cout << "Strassen_multiply: Padded matrix size mismatch. Expected: " << new_size * new_size
-                      << ", got: " << paddedA.size() << " and " << paddedB.size() << std::endl;
-            return {};
-        }
+      for (size_t i = 0; i < half_size; ++i) {
+        for (size_t j = 0; j < half_size; ++j) {
+          A11[i * half_size + j] = matrixA[i * new_size + j];
+          A12[i * half_size + j] = matrixA[i * new_size + j + half_size];
+          A21[i * half_size + j] = matrixA[(i + half_size) * new_size + j];
+          A22[i * half_size + j] = matrixA[(i + half_size) * new_size + j + half_size];
 
-        for (size_t i = 0; i < half_size; ++i) {
-            for (size_t j = 0; j < half_size; ++j) {
-                A11[i * half_size + j] = paddedA[i * new_size + j];
-                A12[i * half_size + j] = paddedA[i * new_size + j + half_size];
-                A21[i * half_size + j] = paddedA[(i + half_size) * new_size + j];
-                A22[i * half_size + j] = paddedA[(i + half_size) * new_size + j + half_size];
-
-                B11[i * half_size + j] = paddedB[i * new_size + j];
-                B12[i * half_size + j] = paddedB[i * new_size + j + half_size];
-                B21[i * half_size + j] = paddedB[(i + half_size) * new_size + j];
-                B22[i * half_size + j] = paddedB[(i + half_size) * new_size + j + half_size];
-            }
+          B11[i * half_size + j] = matrixB[i * new_size + j];
+          B12[i * half_size + j] = matrixB[i * new_size + j + half_size];
+          B21[i * half_size + j] = matrixB[(i + half_size) * new_size + j];
+          B22[i * half_size + j] = matrixB[(i + half_size) * new_size + j + half_size];
         }
+      }
 
       std::cout << "Strassen_multiply: Rank " << rank << " divided matrices into submatrices." << std::endl;
 
