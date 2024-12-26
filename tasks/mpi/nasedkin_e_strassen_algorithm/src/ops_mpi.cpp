@@ -238,27 +238,6 @@ bool StrassenAlgorithmMPI::pre_processing() {
 
       size_t half_size = new_size / 2;
 
-        std::cout << "Strassen_multiply: Padding matrices to size " << new_size << std::endl;
-
-        std::vector<double> paddedA = pad_matrix(matrixA, size, new_size);
-        std::vector<double> paddedB = pad_matrix(matrixB, size, new_size);
-
-        std::vector<double> A11(half_size * half_size);
-        std::vector<double> A12(half_size * half_size);
-        std::vector<double> A21(half_size * half_size);
-        std::vector<double> A22(half_size * half_size);
-
-        std::vector<double> B11(half_size * half_size);
-        std::vector<double> B12(half_size * half_size);
-        std::vector<double> B21(half_size * half_size);
-        std::vector<double> B22(half_size * half_size);
-
-        if (paddedA.size() != new_size * new_size || paddedB.size() != new_size * new_size) {
-          std::cout << "Strassen_multiply: Padded matrix size mismatch. Expected: " << new_size * new_size
-                    << ", got: " << paddedA.size() << " and " << paddedB.size() << std::endl;
-          return {};
-        }
-
       for (size_t i = 0; i < half_size; ++i) {
         for (size_t j = 0; j < half_size; ++j) {
           A11[i * half_size + j] = paddedA[i * new_size + j];
