@@ -25,22 +25,21 @@ boost::mpi::communicator world;
 
 if (world.rank() == 0) {
 auto taskData = std::make_shared<ppc::core::TaskData>();
-taskData->inputs = {};  // Пустые входные данные
+taskData->inputs = {};
 
 nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI task(taskData);
-ASSERT_FALSE(task.validation());  // Ожидается, что валидация провалится
+ASSERT_FALSE(task.validation());
 }
 }
 
-// Тест: размер матриц не совпадает
 TEST(nasedkin_e_strassen_algorithm_mpi, MismatchedMatrixSizes) {
 boost::mpi::communicator world;
 
 if (world.rank() == 0) {
 auto taskData = std::make_shared<ppc::core::TaskData>();
 
-std::vector<double> matrixA = {1, 2, 3, 4};  // 2x2 матрица
-std::vector<double> matrixB = {1, 2, 3, 4, 5, 6, 7, 8, 9};  // 3x3 матрица
+std::vector<double> matrixA = {1, 2, 3, 4};
+std::vector<double> matrixB = {1, 2, 3, 4, 5, 6, 7, 8, 9};
 
 taskData->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixA.data()));
 taskData->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixB.data()));
@@ -50,20 +49,19 @@ taskData->outputs.emplace_back(nullptr);
 taskData->outputs_count.emplace_back(0);
 
 nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI task(taskData);
-ASSERT_FALSE(task.validation());  // Ожидается, что валидация провалится
+ASSERT_FALSE(task.validation());
 }
 }
 
-// Тест: некорректный размер выходной матрицы
 TEST(nasedkin_e_strassen_algorithm_mpi, InvalidOutputSize) {
 boost::mpi::communicator world;
 
 if (world.rank() == 0) {
 auto taskData = std::make_shared<ppc::core::TaskData>();
 
-std::vector<double> matrixA = {1, 2, 3, 4};  // 2x2 матрица
-std::vector<double> matrixB = {5, 6, 7, 8};  // 2x2 матрица
-std::vector<double> result(6);  // Некорректный размер результата
+std::vector<double> matrixA = {1, 2, 3, 4};
+std::vector<double> matrixB = {5, 6, 7, 8};
+std::vector<double> result(6);
 
 taskData->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixA.data()));
 taskData->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixB.data()));
@@ -73,7 +71,7 @@ taskData->outputs.emplace_back(reinterpret_cast<uint8_t*>(result.data()));
 taskData->outputs_count.emplace_back(result.size());
 
 nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI task(taskData);
-ASSERT_FALSE(task.validation());  // Ожидается, что валидация провалится
+ASSERT_FALSE(task.validation());
 }
 }
 
