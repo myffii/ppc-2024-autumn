@@ -30,9 +30,10 @@ boost::mpi::communicator world;
 
 std::shared_ptr<ppc::core::TaskData> taskData = std::make_shared<ppc::core::TaskData>();
 
-// Намеренно не добавляем входные данные
+if (world.rank() == 0) {
 taskData->outputs.emplace_back(nullptr);
 taskData->outputs_count.emplace_back(0);
+}
 
 nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI testTask(taskData);
 ASSERT_FALSE(testTask.validation());
