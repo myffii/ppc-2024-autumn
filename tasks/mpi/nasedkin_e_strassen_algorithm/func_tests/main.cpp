@@ -87,6 +87,7 @@ TEST(nasedkin_e_strassen_algorithm_mpi, Test_3x3) {
     taskDataParallel->outputs_count.emplace_back(resultParallel.size());
   }
 
+  world.barrier();
   nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI testMpiTaskParallel(taskDataParallel);
   ASSERT_TRUE(testMpiTaskParallel.validation());
   ASSERT_TRUE(testMpiTaskParallel.pre_processing());
