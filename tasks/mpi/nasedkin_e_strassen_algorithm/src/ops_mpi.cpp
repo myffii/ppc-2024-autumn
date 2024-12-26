@@ -102,16 +102,12 @@ bool StrassenAlgorithmMPI::pre_processing() {
 
     std::cout << "Pre-processing: Matrix size = " << matrixSize << std::endl;
 
-
-    if (matrixSize * matrixSize != taskData->inputs_count[0]) {
-      std::cout << "Pre-processing failed: Input size mismatch. Expected: "
-                << matrixSize * matrixSize << ", got: " << taskData->inputs_count[0] << std::endl;
-      return false;
-    }
-
     inputMatrixA.assign(inputsA, inputsA + matrixSize * matrixSize);
+      std::cout << "Pre-processing: Matrix A assigned" << std::endl;
     inputMatrixB.assign(inputsB, inputsB + matrixSize * matrixSize);
+      std::cout << "Pre-processing: Matrix B assigned" << std::endl;
     outputMatrix.resize(matrixSize * matrixSize, 0.0);
+      std::cout << "Pre-processing: output Matrix resized" << std::endl;
 
     std::cout << "Pre-processing: Input matrices loaded successfully." << std::endl;
   }
