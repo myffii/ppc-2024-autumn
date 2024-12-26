@@ -66,8 +66,8 @@ namespace nasedkin_e_strassen_algorithm {
 
     bool StrassenAlgorithmSEQ::run() {
         internal_order_test();
-        std::cout << "Rank " << world.rank() << ": Starting Strassen_multiply with matrixSize = " << matrixSize << std::endl;
-        outputMatrix = strassen_multiply(inputMatrixA, inputMatrixB, matrixSize);
+        std::cout << "Starting Strassen_multiply with matrixSize = " << matrixSize << std::endl;
+        outputMatrix = strassen_multiply_seq(inputMatrixA, inputMatrixB, matrixSize);
         return true;
     }
 
@@ -262,7 +262,7 @@ bool StrassenAlgorithmMPI::pre_processing() {
                                                                 const std::vector<double>& matrixB, size_t size) {
 
         if (matrixA.empty() || matrixB.empty() || size == 0) {
-            std::cout << "Rank " << rank << ": Error! matrixA, matrixB are empty, or size is zero before Strassen_multiply" << std::endl;
+            std::cout << "Error! matrixA, matrixB are empty, or size is zero before Strassen_multiply" << std::endl;
             return {};
         }
 
@@ -337,13 +337,12 @@ bool StrassenAlgorithmMPI::pre_processing() {
                 M[i] = strassen_recursive(tasks[i], tasksB[i], half_size);
         }
 
-        if (rank == 0) {
+
             for (int i = 0; i < 7; ++i) {
                     std::vector<double> result;
                     M[i] = result;
                 }
-            }
-        }
+
 
             std::cout << "Final results collected. Verifying matrix sizes:" << std::endl;
             for (int i = 0; i < 7; ++i) {
