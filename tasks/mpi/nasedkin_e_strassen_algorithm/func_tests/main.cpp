@@ -58,7 +58,7 @@ TEST(nasedkin_e_strassen_algorithm_mpi, Test_2x2) {
   ASSERT_TRUE(testMpiTaskParallel.pre_processing());
   ASSERT_TRUE(testMpiTaskParallel.run());
   ASSERT_TRUE(testMpiTaskParallel.post_processing());
-  std::cout<< "Test for " << matrixSize << "x" << matrixSize << " matrix finished" << std:endl;
+  std::cout<< "Test for " << matrixSize << "x" << matrixSize << " matrix finished" << std::endl;
 }
 
 TEST(nasedkin_e_strassen_algorithm_mpi, Test_3x3) {
