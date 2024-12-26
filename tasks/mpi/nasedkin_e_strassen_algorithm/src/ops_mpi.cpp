@@ -139,6 +139,7 @@ bool StrassenAlgorithmMPI::pre_processing() {
     bool StrassenAlgorithmMPI::run() {
       internal_order_test();
 
+      world.barrier();
       boost::mpi::broadcast(world, inputMatrixA, 0);
       boost::mpi::broadcast(world, inputMatrixB, 0);
       boost::mpi::broadcast(world, matrixSize, 0);
