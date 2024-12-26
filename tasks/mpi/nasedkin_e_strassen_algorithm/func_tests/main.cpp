@@ -57,7 +57,7 @@ ASSERT_TRUE(testMpiTaskSeq.validation());
 ASSERT_TRUE(testMpiTaskSeq.pre_processing());
 ASSERT_TRUE(testMpiTaskSeq.run());
 ASSERT_TRUE(testMpiTaskSeq.post_processing());
-std::cout<< "Test for " << matrixSize << "x" << matrixSize << " matrix finished" << std::endl;
+std::cout<< "SEQ Test for " << matrixSize << "x" << matrixSize << " matrix finished" << std::endl;
 }
 
   std::shared_ptr<ppc::core::TaskData> taskDataParallel = std::make_shared<ppc::core::TaskData>();
@@ -78,9 +78,10 @@ std::cout<< "Test for " << matrixSize << "x" << matrixSize << " matrix finished"
   ASSERT_TRUE(testMpiTaskParallel.pre_processing());
   ASSERT_TRUE(testMpiTaskParallel.run());
   ASSERT_TRUE(testMpiTaskParallel.post_processing());
-  std::cout<< "Test for " << matrixSize << "x" << matrixSize << " matrix finished" << std::endl;
+  std::cout<< "Parallel Test for " << matrixSize << "x" << matrixSize << " matrix finished" << std::endl;
   }
 ASSERT_EQ(resultSeq, resultParallel);
+std::cout<< "ASSERT_EQ finished" << std::endl;
 }
 
 TEST(nasedkin_e_strassen_algorithm_mpi, Test_4x4) {
