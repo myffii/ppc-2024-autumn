@@ -72,18 +72,14 @@ std::cout<< "SEQ Test for " << matrixSize << "x" << matrixSize << " matrix finis
 
     std::cout << "Test: TaskData inputs_count[0] = " << taskDataParallel->inputs_count[0]
               << ", inputs_count[1] = " << taskDataParallel->inputs_count[1] << std::endl;
-
+}
   nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI testMpiTaskParallel(taskDataParallel);
   ASSERT_TRUE(testMpiTaskParallel.validation());
   ASSERT_TRUE(testMpiTaskParallel.pre_processing());
   ASSERT_TRUE(testMpiTaskParallel.run());
   ASSERT_TRUE(testMpiTaskParallel.post_processing());
-  std::cout<< "Parallel Test for " << matrixSize << "x" << matrixSize << " matrix finished" << std::endl;
-  }
-  world.barrier();
-for (int i = 0; i < matrixSize * matrixSize; i++) {
-EXPECT_NEAR(resultSeq[i], resultParallel[i], 1e-8);
-}
+ASSERT_EQ(resultSeq, resultParallel);
+std::cout<< "Parallel Test for " << matrixSize << "x" << matrixSize << " matrix finished" << std::endl;
 }
 
 TEST(nasedkin_e_strassen_algorithm_mpi, Test_4x4) {
@@ -133,14 +129,14 @@ taskDataParallel->outputs_count.emplace_back(resultParallel.size());
 
 std::cout << "Test: TaskData inputs_count[0] = " << taskDataParallel->inputs_count[0]
 << ", inputs_count[1] = " << taskDataParallel->inputs_count[1] << std::endl;
-
+}
 nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI testMpiTaskParallel(taskDataParallel);
 ASSERT_TRUE(testMpiTaskParallel.validation());
 ASSERT_TRUE(testMpiTaskParallel.pre_processing());
 ASSERT_TRUE(testMpiTaskParallel.run());
 ASSERT_TRUE(testMpiTaskParallel.post_processing());
 std::cout<< "Test for " << matrixSize << "x" << matrixSize << " matrix finished" << std::endl;
-}
+
 ASSERT_EQ(resultSeq, resultParallel);
 }
 
@@ -191,14 +187,14 @@ taskDataParallel->outputs_count.emplace_back(resultParallel.size());
 
 std::cout << "Test: TaskData inputs_count[0] = " << taskDataParallel->inputs_count[0]
 << ", inputs_count[1] = " << taskDataParallel->inputs_count[1] << std::endl;
-
+}
 nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI testMpiTaskParallel(taskDataParallel);
 ASSERT_TRUE(testMpiTaskParallel.validation());
 ASSERT_TRUE(testMpiTaskParallel.pre_processing());
 ASSERT_TRUE(testMpiTaskParallel.run());
 ASSERT_TRUE(testMpiTaskParallel.post_processing());
 std::cout<< "Test for " << matrixSize << "x" << matrixSize << " matrix finished" << std::endl;
-}
+
 ASSERT_EQ(resultSeq, resultParallel);
 }
 
@@ -249,14 +245,14 @@ taskDataParallel->outputs_count.emplace_back(resultParallel.size());
 
 std::cout << "Test: TaskData inputs_count[0] = " << taskDataParallel->inputs_count[0]
 << ", inputs_count[1] = " << taskDataParallel->inputs_count[1] << std::endl;
-
+}
 nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI testMpiTaskParallel(taskDataParallel);
 ASSERT_TRUE(testMpiTaskParallel.validation());
 ASSERT_TRUE(testMpiTaskParallel.pre_processing());
 ASSERT_TRUE(testMpiTaskParallel.run());
 ASSERT_TRUE(testMpiTaskParallel.post_processing());
 std::cout<< "Test for " << matrixSize << "x" << matrixSize << " matrix finished" << std::endl;
-}
+
 ASSERT_EQ(resultSeq, resultParallel);
 }
 
@@ -307,13 +303,13 @@ taskDataParallel->outputs_count.emplace_back(resultParallel.size());
 
 std::cout << "Test: TaskData inputs_count[0] = " << taskDataParallel->inputs_count[0]
 << ", inputs_count[1] = " << taskDataParallel->inputs_count[1] << std::endl;
-
+}
 nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI testMpiTaskParallel(taskDataParallel);
 ASSERT_TRUE(testMpiTaskParallel.validation());
 ASSERT_TRUE(testMpiTaskParallel.pre_processing());
 ASSERT_TRUE(testMpiTaskParallel.run());
 ASSERT_TRUE(testMpiTaskParallel.post_processing());
 std::cout<< "Test for " << matrixSize << "x" << matrixSize << " matrix finished" << std::endl;
-}
+
 ASSERT_EQ(resultSeq, resultParallel);
 }
