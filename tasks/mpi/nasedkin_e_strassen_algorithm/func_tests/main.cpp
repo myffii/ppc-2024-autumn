@@ -25,6 +25,73 @@ std::vector<double> generateRandomMatrix(int size) {
   return matrix;
 }
 
+TEST(nasedkin_e_strassen_algorithm_mpi, Test_Validation_Empty_Input) {
+boost::mpi::communicator world;
+
+std::shared_ptr<ppc::core::TaskData> taskData = std::make_shared<ppc::core::TaskData>();
+
+// Намеренно не добавляем входные данные
+taskData->outputs.emplace_back(nullptr);
+taskData->outputs_count.emplace_back(0);
+
+nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI testTask(taskData);
+ASSERT_FALSE(testTask.validation());
+}
+
+TEST(nasedkin_e_strassen_algorithm_mpi, Test_Validation_Unequal_Matrix_Sizes) {
+boost::mpi::communicator world;
+
+std::vector<double> matrixA = {1.0, 2.0, 3.0, 4.0};
+std::vector<double> matrixB = {1.0, 2.0, 3.0};
+
+std::shared_ptr<ppc::core::TaskData> taskData = std::make_shared<ppc::core::TaskData>();
+
+if (world.rank() == 0) {
+taskData->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixA.data()));
+taskData->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixB.data()));
+taskData->inputs_count.emplace_back(matrixA.size());
+taskData->inputs_count.emplace_back(matrixB.size());
+}
+
+nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI testTask(taskData);
+ASSERT_FALSE(testTask.validation());
+}
+
+TEST(nasedkin_e_strassen_algorithm_mpi, Test_Validation_NonSquare_Matrix) {
+boost::mpi::communicator world;
+
+std::vector<double> matrixA = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0};
+std::vector<double> matrixB = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0};
+
+std::shared_ptr<ppc::core::TaskData> taskData = std::make_shared<ppc::core::TaskData>();
+
+if (world.rank() == 0) {
+taskData->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixA.data()));
+taskData->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixB.data()));
+taskData->inputs_count.emplace_back(matrixA.size());
+taskData->inputs_count.emplace_back(matrixB.size());
+}
+
+nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI testTask(taskData);
+ASSERT_FALSE(testTask.validation());
+}
+
+TEST(nasedkin_e_strassen_algorithm_mpi, Test_Validation_Null_Input) {
+boost::mpi::communicator world;
+
+std::shared_ptr<ppc::core::TaskData> taskData = std::make_shared<ppc::core::TaskData>();
+
+if (world.rank() == 0) {
+taskData->inputs.emplace_back(nullptr);
+taskData->inputs.emplace_back(nullptr);
+taskData->inputs_count.emplace_back(0);
+taskData->inputs_count.emplace_back(0);
+}
+
+nasedkin_e_strassen_algorithm::StrassenAlgorithmMPI testTask(taskData);
+ASSERT_FALSE(testTask.validation());
+}
+
 TEST(nasedkin_e_strassen_algorithm_mpi, Test_2x2) {
   boost::mpi::communicator world;
 
