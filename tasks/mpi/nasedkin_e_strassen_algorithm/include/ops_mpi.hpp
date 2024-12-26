@@ -1,11 +1,12 @@
 #pragma once
 
-#include <vector>
+#include <boost/mpi/communicator.hpp>
+#include <cmath>
 #include <cstdlib>
 #include <ctime>
-#include <cmath>
 #include <memory>
-#include <boost/mpi/communicator.hpp>
+#include <vector>
+
 #include "core/task/include/task.hpp"
 
 namespace nasedkin_e_strassen_algorithm {
@@ -20,7 +21,8 @@ namespace nasedkin_e_strassen_algorithm {
         bool post_processing() override;
 
     private:
-        static std::vector<double> strassen_multiply_seq(const std::vector<double>& matrixA, const std::vector<double>& matrixB, size_t size);
+        static std::vector<double> strassen_multiply_seq(const std::vector<double>& matrixA,
+                                                         const std::vector<double>& matrixB, size_t size);
 
         std::vector<double> inputMatrixA;
         std::vector<double> inputMatrixB;
@@ -38,7 +40,8 @@ namespace nasedkin_e_strassen_algorithm {
         bool post_processing() override;
 
     private:
-        static std::vector<double> strassen_multiply(const std::vector<double>& matrixA, const std::vector<double>& matrixB, size_t size);
+        static std::vector<double> strassen_multiply(const std::vector<double>& matrixA, const std::vector<double>& matrixB,
+                                                     size_t size);
 
         boost::mpi::communicator world;
 
@@ -48,8 +51,9 @@ namespace nasedkin_e_strassen_algorithm {
         size_t matrixSize;
     };
 
-    std::vector<double> strassen_recursive(const std::vector<double>& matrixA,
-                                                  const std::vector<double>& matrixB, size_t size);
+    std::vector<double> strassen_recursive(const std::vector<double>& matrixA, const std::vector<double>& matrixB,
+                                           size_t size);
     std::vector<double> matrix_add(const std::vector<double>& matrixA, const std::vector<double>& matrixB, size_t size);
-    std::vector<double> matrix_subtract(const std::vector<double>& matrixA, const std::vector<double>& matrixB, size_t size);
+    std::vector<double> matrix_subtract(const std::vector<double>& matrixA, const std::vector<double>& matrixB,
+                                        size_t size);
 }  // namespace nasedkin_e_strassen_algorithm
