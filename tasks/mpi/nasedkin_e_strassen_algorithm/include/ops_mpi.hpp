@@ -20,7 +20,6 @@ namespace nasedkin_e_strassen_algorithm {
         bool post_processing() override;
 
     private:
-        static bool power_of_two(size_t number);
         static std::vector<double> strassen_multiply_seq(const std::vector<double>& matrixA, const std::vector<double>& matrixB, size_t size);
 
         std::vector<double> inputMatrixA;
@@ -39,7 +38,6 @@ namespace nasedkin_e_strassen_algorithm {
         bool post_processing() override;
 
     private:
-        static bool power_of_two(size_t number);
         static std::vector<double> strassen_multiply(const std::vector<double>& matrixA, const std::vector<double>& matrixB, size_t size);
 
         boost::mpi::communicator world;
@@ -54,4 +52,5 @@ namespace nasedkin_e_strassen_algorithm {
                                                   const std::vector<double>& matrixB, size_t size);
     std::vector<double> matrix_add(const std::vector<double>& matrixA, const std::vector<double>& matrixB, size_t size);
     std::vector<double> matrix_subtract(const std::vector<double>& matrixA, const std::vector<double>& matrixB, size_t size);
+    std::vector<double> pad_matrix(const std::vector<double>& matrix, size_t original_size, size_t new_size);
 }  // namespace nasedkin_e_strassen_algorithm
