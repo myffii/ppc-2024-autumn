@@ -42,12 +42,12 @@ TEST(nasedkin_e_strassen_algorithm_mpi, Test_2x2) {
 std::shared_ptr<ppc::core::TaskData> taskDataSeq = std::make_shared<ppc::core::TaskData>();
 
 if (world.rank() == 0) {
-taskDataParallel->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixA.data()));
-taskDataParallel->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixB.data()));
-taskDataParallel->inputs_count.emplace_back(matrixA.size());
-taskDataParallel->inputs_count.emplace_back(matrixB.size());
-taskDataParallel->outputs.emplace_back(reinterpret_cast<uint8_t*>(resultSeq.data()));
-taskDataParallel->outputs_count.emplace_back(resultSeq.size());
+taskDataSeq->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixA.data()));
+taskDataSeq->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixB.data()));
+taskDataSeq->inputs_count.emplace_back(matrixA.size());
+taskDataSeq->inputs_count.emplace_back(matrixB.size());
+taskDataSeq->outputs.emplace_back(reinterpret_cast<uint8_t*>(resultSeq.data()));
+taskDataSeq->outputs_count.emplace_back(resultSeq.size());
 
 std::cout << "Test: TaskData inputs_count[0] = " << taskDataParallel->inputs_count[0]
 << ", inputs_count[1] = " << taskDataParallel->inputs_count[1] << std::endl;
@@ -100,12 +100,12 @@ std::vector<double> resultSeq(matrixSize * matrixSize, 0.0);
 std::shared_ptr<ppc::core::TaskData> taskDataSeq = std::make_shared<ppc::core::TaskData>();
 
 if (world.rank() == 0) {
-taskDataParallel->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixA.data()));
-taskDataParallel->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixB.data()));
-taskDataParallel->inputs_count.emplace_back(matrixA.size());
-taskDataParallel->inputs_count.emplace_back(matrixB.size());
-taskDataParallel->outputs.emplace_back(reinterpret_cast<uint8_t*>(resultSeq.data()));
-taskDataParallel->outputs_count.emplace_back(resultSeq.size());
+taskDataSeq->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixA.data()));
+taskDataSeq->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixB.data()));
+taskDataSeq->inputs_count.emplace_back(matrixA.size());
+taskDataSeq->inputs_count.emplace_back(matrixB.size());
+taskDataSeq->outputs.emplace_back(reinterpret_cast<uint8_t*>(resultSeq.data()));
+taskDataSeq->outputs_count.emplace_back(resultSeq.size());
 
 std::cout << "Test: TaskData inputs_count[0] = " << taskDataParallel->inputs_count[0]
 << ", inputs_count[1] = " << taskDataParallel->inputs_count[1] << std::endl;
@@ -158,12 +158,12 @@ std::vector<double> resultSeq(matrixSize * matrixSize, 0.0);
 std::shared_ptr<ppc::core::TaskData> taskDataSeq = std::make_shared<ppc::core::TaskData>();
 
 if (world.rank() == 0) {
-taskDataParallel->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixA.data()));
-taskDataParallel->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixB.data()));
-taskDataParallel->inputs_count.emplace_back(matrixA.size());
-taskDataParallel->inputs_count.emplace_back(matrixB.size());
-taskDataParallel->outputs.emplace_back(reinterpret_cast<uint8_t*>(resultSeq.data()));
-taskDataParallel->outputs_count.emplace_back(resultSeq.size());
+taskDataSeq->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixA.data()));
+taskDataSeq->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixB.data()));
+taskDataSeq->inputs_count.emplace_back(matrixA.size());
+taskDataSeq->inputs_count.emplace_back(matrixB.size());
+taskDataSeq->outputs.emplace_back(reinterpret_cast<uint8_t*>(resultSeq.data()));
+taskDataSeq->outputs_count.emplace_back(resultSeq.size());
 
 std::cout << "Test: TaskData inputs_count[0] = " << taskDataParallel->inputs_count[0]
 << ", inputs_count[1] = " << taskDataParallel->inputs_count[1] << std::endl;
@@ -216,12 +216,12 @@ std::vector<double> resultSeq(matrixSize * matrixSize, 0.0);
 std::shared_ptr<ppc::core::TaskData> taskDataSeq = std::make_shared<ppc::core::TaskData>();
 
 if (world.rank() == 0) {
-taskDataParallel->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixA.data()));
-taskDataParallel->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixB.data()));
-taskDataParallel->inputs_count.emplace_back(matrixA.size());
-taskDataParallel->inputs_count.emplace_back(matrixB.size());
-taskDataParallel->outputs.emplace_back(reinterpret_cast<uint8_t*>(resultSeq.data()));
-taskDataParallel->outputs_count.emplace_back(resultSeq.size());
+taskDataSeq->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixA.data()));
+taskDataSeq->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixB.data()));
+taskDataSeq->inputs_count.emplace_back(matrixA.size());
+taskDataSeq->inputs_count.emplace_back(matrixB.size());
+taskDataSeq->outputs.emplace_back(reinterpret_cast<uint8_t*>(resultSeq.data()));
+taskDataSeq->outputs_count.emplace_back(resultSeq.size());
 
 std::cout << "Test: TaskData inputs_count[0] = " << taskDataParallel->inputs_count[0]
 << ", inputs_count[1] = " << taskDataParallel->inputs_count[1] << std::endl;
@@ -274,12 +274,12 @@ std::vector<double> resultSeq(matrixSize * matrixSize, 0.0);
 std::shared_ptr<ppc::core::TaskData> taskDataSeq = std::make_shared<ppc::core::TaskData>();
 
 if (world.rank() == 0) {
-taskDataParallel->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixA.data()));
-taskDataParallel->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixB.data()));
-taskDataParallel->inputs_count.emplace_back(matrixA.size());
-taskDataParallel->inputs_count.emplace_back(matrixB.size());
-taskDataParallel->outputs.emplace_back(reinterpret_cast<uint8_t*>(resultSeq.data()));
-taskDataParallel->outputs_count.emplace_back(resultSeq.size());
+taskDataSeq->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixA.data()));
+taskDataSeq->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixB.data()));
+taskDataSeq->inputs_count.emplace_back(matrixA.size());
+taskDataSeq->inputs_count.emplace_back(matrixB.size());
+taskDataSeq->outputs.emplace_back(reinterpret_cast<uint8_t*>(resultSeq.data()));
+taskDataSeq->outputs_count.emplace_back(resultSeq.size());
 
 std::cout << "Test: TaskData inputs_count[0] = " << taskDataParallel->inputs_count[0]
 << ", inputs_count[1] = " << taskDataParallel->inputs_count[1] << std::endl;
