@@ -80,8 +80,11 @@ std::cout<< "SEQ Test for " << matrixSize << "x" << matrixSize << " matrix finis
   ASSERT_TRUE(testMpiTaskParallel.post_processing());
   std::cout<< "Parallel Test for " << matrixSize << "x" << matrixSize << " matrix finished" << std::endl;
   }
+  world.barrier();
+if (world.rank() == 0){
 ASSERT_EQ(resultSeq, resultParallel);
-std::cout<< "ASSERT_EQ finished" << std::endl;
+std::cout<< "ASSERT_EQ finished" <<std::endl;
+}
 }
 
 TEST(nasedkin_e_strassen_algorithm_mpi, Test_4x4) {
