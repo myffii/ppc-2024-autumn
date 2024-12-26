@@ -128,19 +128,6 @@ bool StrassenAlgorithmMPI::pre_processing() {
         return sqrt_val * sqrt_val == matrixSize;
     }
 
-    std::vector<double> StrassenAlgorithmMPI::pad_matrix(const std::vector<double>& matrix, size_t original_size, size_t new_size) {
-      std::cout << "Pad_matrix: Padding matrix from size " << original_size << " to " << new_size << std::endl;
-      std::vector<double> padded_matrix(new_size * new_size, 0.0);
-      for (size_t i = 0; i < original_size; ++i) {
-        for (size_t j = 0; j < original_size; ++j) {
-          padded_matrix[i * new_size + j] = matrix[i * original_size + j];
-        }
-      }
-
-      std::cout << "Pad_matrix: Padding completed." << std::endl;
-      return padded_matrix;
-    }
-
     std::vector<double> StrassenAlgorithmMPI::strassen_recursive(const std::vector<double>& matrixA,
                                            const std::vector<double>& matrixB, size_t size) {
         if (size == 1) {
@@ -250,15 +237,15 @@ bool StrassenAlgorithmMPI::pre_processing() {
 
       for (size_t i = 0; i < half_size; ++i) {
         for (size_t j = 0; j < half_size; ++j) {
-          A11[i * half_size + j] = paddedA[i * new_size + j];
-          A12[i * half_size + j] = paddedA[i * new_size + j + half_size];
-          A21[i * half_size + j] = paddedA[(i + half_size) * new_size + j];
-          A22[i * half_size + j] = paddedA[(i + half_size) * new_size + j + half_size];
+          A11[i * half_size + j] = matrixA[i * new_size + j];
+          A12[i * half_size + j] = matrixA[i * new_size + j + half_size];
+          A21[i * half_size + j] = matrixA[(i + half_size) * new_size + j];
+          A22[i * half_size + j] = matrixA[(i + half_size) * new_size + j + half_size];
 
-          B11[i * half_size + j] = paddedB[i * new_size + j];
-          B12[i * half_size + j] = paddedB[i * new_size + j + half_size];
-          B21[i * half_size + j] = paddedB[(i + half_size) * new_size + j];
-          B22[i * half_size + j] = paddedB[(i + half_size) * new_size + j + half_size];
+          B11[i * half_size + j] = matrixB[i * new_size + j];
+          B12[i * half_size + j] = matrixB[i * new_size + j + half_size];
+          B21[i * half_size + j] = matrixB[(i + half_size) * new_size + j];
+          B22[i * half_size + j] = matrixB[(i + half_size) * new_size + j + half_size];
         }
       }
 
