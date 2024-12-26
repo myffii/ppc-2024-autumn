@@ -1,11 +1,11 @@
-#include "seq/nasedkin_e_strassen_algorithm/include/ops_seq.hpp"
-
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
 #include <memory>
 #include <vector>
+
+#include "seq/nasedkin_e_strassen_algorithm/include/ops_seq.hpp"
 
 namespace nasedkin_e_strassen_algorithm {
 
