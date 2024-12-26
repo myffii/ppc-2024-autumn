@@ -81,8 +81,8 @@ std::cout<< "SEQ Test for " << matrixSize << "x" << matrixSize << " matrix finis
   std::cout<< "Parallel Test for " << matrixSize << "x" << matrixSize << " matrix finished" << std::endl;
   }
   world.barrier();
-for (size_t i = 0; i < matirxSize * matrixSize; i++) {
-EXPECT_NEAR(resultSeq[i], resulParallel[i], 1e-8);
+for (int i = 0; i < matrixSize * matrixSize; i++) {
+EXPECT_NEAR(resultSeq[i], resultParallel[i], 1e-8);
 }
 }
 
