@@ -29,9 +29,11 @@ TEST(nasedkin_e_strassen_algorithm_mpi, Test_2x2) {
   boost::mpi::communicator world;
 
   int matrixSize = 2;
-  std::vector<double> matrixA = generateRandomMatrix(matrixSize);
-  std::vector<double> matrixB = generateRandomMatrix(matrixSize);
+  std::vector<double> matrixA;
+  std::vector<double> matrixB;
   if (world.rank() == 0) {
+    matrixA = generateRandomMatrix(matrixSize);
+    matrixB = generateRandomMatrix(matrixSize);
     std::cout << "Test: MatrixA size = " << matrixSize << ", MatrixB size = " << matrixSize << std::endl;
   }
   std::vector<double> resultParallel(matrixSize * matrixSize, 0.0);
