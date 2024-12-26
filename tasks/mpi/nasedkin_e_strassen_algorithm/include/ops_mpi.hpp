@@ -50,8 +50,8 @@ namespace nasedkin_e_strassen_algorithm {
         size_t matrixSize;
     };
 
-    static std::vector<double> strassen_recursive(const std::vector<double>& matrixA,
+    std::vector<double> strassen_recursive(const std::vector<double>& matrixA,
                                                   const std::vector<double>& matrixB, size_t size);
-    static std::vector<double> matrix_add(const std::vector<double>& matrixA, const std::vector<double>& matrixB, size_t size);
-    static std::vector<double> matrix_subtract(const std::vector<double>& matrixA, const std::vector<double>& matrixB, size_t size);
+    std::vector<double> matrix_add(const std::vector<double>& matrixA, const std::vector<double>& matrixB, size_t size);
+    std::vector<double> matrix_subtract(const std::vector<double>& matrixA, const std::vector<double>& matrixB, size_t size);
 }  // namespace nasedkin_e_strassen_algorithm
