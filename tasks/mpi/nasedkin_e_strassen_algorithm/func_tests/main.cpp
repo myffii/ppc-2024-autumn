@@ -49,8 +49,8 @@ taskDataSeq->inputs_count.emplace_back(matrixB.size());
 taskDataSeq->outputs.emplace_back(reinterpret_cast<uint8_t*>(resultSeq.data()));
 taskDataSeq->outputs_count.emplace_back(resultSeq.size());
 
-std::cout << "Test: TaskData inputs_count[0] = " << taskDataParallel->inputs_count[0]
-<< ", inputs_count[1] = " << taskDataParallel->inputs_count[1] << std::endl;
+std::cout << "Test: TaskData inputs_count[0] = " << taskDataSeq->inputs_count[0]
+<< ", inputs_count[1] = " << taskDataSeq->inputs_count[1] << std::endl;
 
 nasedkin_e_strassen_algorithm::StrassenAlgorithmSEQ testMpiTaskSeq(taskDataSeq);
 ASSERT_TRUE(testMpiTaskSeq.validation());
@@ -107,8 +107,8 @@ taskDataSeq->inputs_count.emplace_back(matrixB.size());
 taskDataSeq->outputs.emplace_back(reinterpret_cast<uint8_t*>(resultSeq.data()));
 taskDataSeq->outputs_count.emplace_back(resultSeq.size());
 
-std::cout << "Test: TaskData inputs_count[0] = " << taskDataParallel->inputs_count[0]
-<< ", inputs_count[1] = " << taskDataParallel->inputs_count[1] << std::endl;
+std::cout << "Test: TaskData inputs_count[0] = " << taskDataSeq->inputs_count[0]
+<< ", inputs_count[1] = " << taskDataSeq->inputs_count[1] << std::endl;
 
 nasedkin_e_strassen_algorithm::StrassenAlgorithmSEQ testMpiTaskSeq(taskDataSeq);
 ASSERT_TRUE(testMpiTaskSeq.validation());
@@ -165,8 +165,8 @@ taskDataSeq->inputs_count.emplace_back(matrixB.size());
 taskDataSeq->outputs.emplace_back(reinterpret_cast<uint8_t*>(resultSeq.data()));
 taskDataSeq->outputs_count.emplace_back(resultSeq.size());
 
-std::cout << "Test: TaskData inputs_count[0] = " << taskDataParallel->inputs_count[0]
-<< ", inputs_count[1] = " << taskDataParallel->inputs_count[1] << std::endl;
+std::cout << "Test: TaskData inputs_count[0] = " << taskDataSeq->inputs_count[0]
+<< ", inputs_count[1] = " << taskDataSeq->inputs_count[1] << std::endl;
 
 nasedkin_e_strassen_algorithm::StrassenAlgorithmSEQ testMpiTaskSeq(taskDataSeq);
 ASSERT_TRUE(testMpiTaskSeq.validation());
@@ -223,8 +223,8 @@ taskDataSeq->inputs_count.emplace_back(matrixB.size());
 taskDataSeq->outputs.emplace_back(reinterpret_cast<uint8_t*>(resultSeq.data()));
 taskDataSeq->outputs_count.emplace_back(resultSeq.size());
 
-std::cout << "Test: TaskData inputs_count[0] = " << taskDataParallel->inputs_count[0]
-<< ", inputs_count[1] = " << taskDataParallel->inputs_count[1] << std::endl;
+std::cout << "Test: TaskData inputs_count[0] = " << taskDataSeq->inputs_count[0]
+<< ", inputs_count[1] = " << taskDataSeq->inputs_count[1] << std::endl;
 
 nasedkin_e_strassen_algorithm::StrassenAlgorithmSEQ testMpiTaskSeq(taskDataSeq);
 ASSERT_TRUE(testMpiTaskSeq.validation());
@@ -281,8 +281,8 @@ taskDataSeq->inputs_count.emplace_back(matrixB.size());
 taskDataSeq->outputs.emplace_back(reinterpret_cast<uint8_t*>(resultSeq.data()));
 taskDataSeq->outputs_count.emplace_back(resultSeq.size());
 
-std::cout << "Test: TaskData inputs_count[0] = " << taskDataParallel->inputs_count[0]
-<< ", inputs_count[1] = " << taskDataParallel->inputs_count[1] << std::endl;
+std::cout << "Test: TaskData inputs_count[0] = " << taskDataSeq->inputs_count[0]
+<< ", inputs_count[1] = " << taskDataSeq->inputs_count[1] << std::endl;
 
 nasedkin_e_strassen_algorithm::StrassenAlgorithmSEQ testMpiTaskSeq(taskDataSeq);
 ASSERT_TRUE(testMpiTaskSeq.validation());
