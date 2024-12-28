@@ -278,16 +278,6 @@ std::vector<double> StrassenAlgorithmSEQ::strassen_multiply_seq(const std::vecto
     }
   }
 
-    std::vector<double> result(size * size);
-    for (size_t i = 0; i < half_size; ++i) {
-        for (size_t j = 0; j < half_size; ++j) {
-            result[i * size + j] = C11[i * half_size + j];
-            result[i * size + j + half_size] = C12[i * half_size + j];
-            result[(i + half_size) * size + j] = C21[i * half_size + j];
-            result[(i + half_size) * size + j + half_size] = C22[i * half_size + j];
-        }
-    }
-
     std::vector<double> finalResult(size * size);
     for (size_t i = 0; i < size; ++i) {
         for (size_t j = 0; j < size; ++j) {
