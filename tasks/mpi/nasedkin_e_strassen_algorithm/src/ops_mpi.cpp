@@ -111,12 +111,7 @@ bool StrassenAlgorithmMPI::validation() {
 
 bool StrassenAlgorithmMPI::run() {
     std::cout << "Run started" << std::endl;
-    boost::mpi::communicator world;
   internal_order_test();
-    world.barrier();
-  boost::mpi::broadcast(world, inputMatrixA, 0);
-  boost::mpi::broadcast(world, inputMatrixB, 0);
-  boost::mpi::broadcast(world, matrixSize, 0);
   outputMatrix = strassen_multiply(inputMatrixA, inputMatrixB, matrixSize);
     std::cout << "Run ended" << std::endl;
   return true;
@@ -127,12 +122,6 @@ bool StrassenAlgorithmMPI::post_processing() {
   int rank = world.rank();
   if (rank == 0) {
     auto* outputs = reinterpret_cast<double*>(taskData->outputs[0]);
-      auto newSize = static_cast<size_t>(std::sqrt(outputMatrix.size()));
-      for (size_t i = 0; i < matrixSize; ++i) {
-          for (size_t j = 0; j < matrixSize; ++j) {
-              outputs[i * matrixSize + j] = outputMatrix[i * newSize + j];
-          }
-      }
     std::copy(outputMatrix.begin(), outputMatrix.end(), outputs);
   }
   return true;
@@ -254,15 +243,15 @@ std::vector<double> StrassenAlgorithmSEQ::strassen_multiply_seq(const std::vecto
 
   for (size_t i = 0; i < half_size; ++i) {
     for (size_t j = 0; j < half_size; ++j) {
-      A11[i * half_size + j] = matrixA[i * new_size + j];
-      A12[i * half_size + j] = matrixA[i * new_size + j + half_size];
-      A21[i * half_size + j] = matrixA[(i + half_size) * new_size + j];
-      A22[i * half_size + j] = matrixA[(i + half_size) * new_size + j + half_size];
+      A11[i * half_size + j] = matrixA[i * size + j];
+      A12[i * half_size + j] = matrixA[i * size + j + half_size];
+      A21[i * half_size + j] = matrixA[(i + half_size) * size + j];
+      A22[i * half_size + j] = matrixA[(i + half_size) * size + j + half_size];
 
-      B11[i * half_size + j] = matrixB[i * new_size + j];
-      B12[i * half_size + j] = matrixB[i * new_size + j + half_size];
-      B21[i * half_size + j] = matrixB[(i + half_size) * new_size + j];
-      B22[i * half_size + j] = matrixB[(i + half_size) * new_size + j + half_size];
+      B11[i * half_size + j] = matrixB[i * size + j];
+      B12[i * half_size + j] = matrixB[i * size + j + half_size];
+      B21[i * half_size + j] = matrixB[(i + half_size) * size + j];
+      B22[i * half_size + j] = matrixB[(i + half_size) * size + j + half_size];
     }
   }
 
@@ -317,6 +306,9 @@ std::vector<double> StrassenAlgorithmMPI::strassen_multiply(const std::vector<do
 
   int rank = world.rank();
   int num_procs = world.size();
+    boost::mpi::broadcast(world, inputMatrixA, 0);
+    boost::mpi::broadcast(world, inputMatrixB, 0);
+    boost::mpi::broadcast(world, matrixSize, 0);
 
   if (size == 1) {
     return {matrixA[0] * matrixB[0]};
@@ -336,15 +328,15 @@ std::vector<double> StrassenAlgorithmMPI::strassen_multiply(const std::vector<do
 
   for (size_t i = 0; i < half_size; ++i) {
     for (size_t j = 0; j < half_size; ++j) {
-      A11[i * half_size + j] = matrixA[i * new_size + j];
-      A12[i * half_size + j] = matrixA[i * new_size + j + half_size];
-      A21[i * half_size + j] = matrixA[(i + half_size) * new_size + j];
-      A22[i * half_size + j] = matrixA[(i + half_size) * new_size + j + half_size];
+      A11[i * half_size + j] = matrixA[i * size + j];
+      A12[i * half_size + j] = matrixA[i * size + j + half_size];
+      A21[i * half_size + j] = matrixA[(i + half_size) * size + j];
+      A22[i * half_size + j] = matrixA[(i + half_size) * size + j + half_size];
 
-      B11[i * half_size + j] = matrixB[i * new_size + j];
-      B12[i * half_size + j] = matrixB[i * new_size + j + half_size];
-      B21[i * half_size + j] = matrixB[(i + half_size) * new_size + j];
-      B22[i * half_size + j] = matrixB[(i + half_size) * new_size + j + half_size];
+      B11[i * half_size + j] = matrixB[i * size + j];
+      B12[i * half_size + j] = matrixB[i * size + j + half_size];
+      B21[i * half_size + j] = matrixB[(i + half_size) * size + j];
+      B22[i * half_size + j] = matrixB[(i + half_size) * size + j + half_size];
     }
   }
 
