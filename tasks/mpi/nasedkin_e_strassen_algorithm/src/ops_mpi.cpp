@@ -317,6 +317,7 @@ std::vector<double> StrassenAlgorithmSEQ::strassen_multiply_seq(const std::vecto
 std::vector<double> StrassenAlgorithmMPI::strassen_multiply(const std::vector<double>& matrixA,
                                                             const std::vector<double>& matrixB, size_t size) {
   boost::mpi::environment env;
+  boost::mpi::communicator world;
 
     std::cout << "Start size = " << size << std::endl;
 
