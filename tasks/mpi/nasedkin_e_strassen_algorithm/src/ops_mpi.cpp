@@ -52,14 +52,7 @@ bool StrassenAlgorithmSEQ::run() {
 bool StrassenAlgorithmSEQ::post_processing() {
   internal_order_test();
   auto* outputs = reinterpret_cast<double*>(taskData->outputs[0]);
-    auto newSize = static_cast<size_t>(std::sqrt(outputMatrix.size()));
-    for (size_t i = 0; i < matrixSize; ++i) {
-        for (size_t j = 0; j < matrixSize; ++j) {
-            outputs[i * matrixSize + j] = outputMatrix[i * newSize + j];
-        }
-    }
   std::copy(outputMatrix.begin(), outputMatrix.end(), outputs);
-    std::cout << "SEQ ended test" << std::endl;
   return true;
 }
 
@@ -127,15 +120,8 @@ bool StrassenAlgorithmMPI::post_processing() {
   int rank = world.rank();
   if (rank == 0) {
     auto* outputs = reinterpret_cast<double*>(taskData->outputs[0]);
-      auto newSize = static_cast<size_t>(std::sqrt(outputMatrix.size()));
-      for (size_t i = 0; i < matrixSize; ++i) {
-          for (size_t j = 0; j < matrixSize; ++j) {
-              outputs[i * matrixSize + j] = outputMatrix[i * newSize + j];
-          }
-      }
     std::copy(outputMatrix.begin(), outputMatrix.end(), outputs);
   }
-    std::cout << "SEQ ended test" << std::endl;
   return true;
 }
 
@@ -373,7 +359,7 @@ std::vector<double> StrassenAlgorithmMPI::strassen_multiply(const std::vector<do
         matrix_add(B11, B22, half_size),      B11, matrix_subtract(B12, B22, half_size),
         matrix_subtract(B21, B11, half_size), B22, matrix_add(B11, B12, half_size),
         matrix_add(B21, B22, half_size)};
-      std::cout << "Tasks created succesfully" << size << std::endl;
+      std::cout << "Tasks created succesfully" << std::endl;
 
     for (int i = 0; i < 7; ++i) {
       if (i % num_procs == 0) {
@@ -382,7 +368,7 @@ std::vector<double> StrassenAlgorithmMPI::strassen_multiply(const std::vector<do
         world.send(i % num_procs, i, tasks[i]);
         world.send(i % num_procs, i, tasksB[i]);
       }
-        std::cout << "Tasks sent succesfully" << size << std::endl;
+        std::cout << "Tasks sent succesfully"<< std::endl;
     }
 
 
@@ -395,13 +381,13 @@ std::vector<double> StrassenAlgorithmMPI::strassen_multiply(const std::vector<do
 
       world.recv(0, i, taskA);
       world.recv(0, i, taskB);
-        std::cout << "Recv succesfully" << size << std::endl;
+        std::cout << "Recv succesfully" << std::endl;
 
       M[i] = strassen_recursive(taskA, taskB, half_size);
-        std::cout << "Task " << i << " solved succesfully" << size << std::endl;
+        std::cout << "Task " << i << " solved succesfully" << std::endl;
 
       world.send(0, i, M[i]);
-        std::cout << "Solution " << i << " sent succesfully" << size << std::endl;
+        std::cout << "Solution " << i << " sent succesfully" << std::endl;
     }
   }
 
@@ -411,7 +397,7 @@ std::vector<double> StrassenAlgorithmMPI::strassen_multiply(const std::vector<do
         std::vector<double> result;
         world.recv(i % num_procs, i, result);
         M[i] = result;
-          std::cout << "Solution " << i << " recv succesfully" << size << std::endl;
+          std::cout << "Solution " << i << " recv succesfully" << std::endl;
       }
     }
   }
@@ -433,7 +419,7 @@ std::vector<double> StrassenAlgorithmMPI::strassen_multiply(const std::vector<do
         result[(i + half_size) * size + j + half_size] = C22[i * half_size + j];
       }
     }
-      std::cout << "Final result calculated succesfully" << size << std::endl;
+      std::cout << "Final result calculated succesfully" << std::endl;
     return result;
   }
   return {};
