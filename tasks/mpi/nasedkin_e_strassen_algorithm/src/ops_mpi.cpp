@@ -105,7 +105,7 @@ bool StrassenAlgorithmMPI::validation() {
       return false;
     }
   }
-    std::cout << "Validation ended" << std::endl
+    std::cout << "Validation ended" << std::endl;
   return true;
 }
 
