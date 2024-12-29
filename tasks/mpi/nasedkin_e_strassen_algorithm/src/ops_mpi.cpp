@@ -91,6 +91,7 @@ bool StrassenAlgorithmMPI::pre_processing() {
 }
 
 bool StrassenAlgorithmMPI::validation() {
+    std::cout << "Validation started" << std::endl;
   internal_order_test();
   int rank = world.rank();
   if (rank == 0) {
@@ -104,15 +105,20 @@ bool StrassenAlgorithmMPI::validation() {
       return false;
     }
   }
+    std::cout << "Validation ended" << std::endl
   return true;
 }
 
 bool StrassenAlgorithmMPI::run() {
+    std::cout << "Run started" << std::endl;
+    boost::mpi::communicator world;
   internal_order_test();
   boost::mpi::broadcast(world, inputMatrixA, 0);
   boost::mpi::broadcast(world, inputMatrixB, 0);
   boost::mpi::broadcast(world, matrixSize, 0);
+  world.barrier();
   outputMatrix = strassen_multiply(inputMatrixA, inputMatrixB, matrixSize);
+    std::cout << "Run ended" << std::endl;
   return true;
 }
 
@@ -311,7 +317,6 @@ std::vector<double> StrassenAlgorithmSEQ::strassen_multiply_seq(const std::vecto
 std::vector<double> StrassenAlgorithmMPI::strassen_multiply(const std::vector<double>& matrixA,
                                                             const std::vector<double>& matrixB, size_t size) {
   boost::mpi::environment env;
-  boost::mpi::communicator world;
 
     std::cout << "Start size = " << size << std::endl;
 
