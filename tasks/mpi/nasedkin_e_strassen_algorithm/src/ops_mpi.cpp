@@ -48,6 +48,7 @@ bool StrassenAlgorithmSEQ::run() {
 bool StrassenAlgorithmSEQ::post_processing() {
   internal_order_test();
   auto* outputs = reinterpret_cast<double*>(taskData->outputs[0]);
+    auto originalSize = static_cast<size_t>(std::sqrt(taskData->outputs_count[0]));
     for (size_t i = 0; i < originalSize; ++i) {
         for (size_t j = 0; j < originalSize; ++j) {
             outputs[i * originalSize + j] = outputMatrix[i * matrixSize + j];
@@ -121,7 +122,7 @@ bool StrassenAlgorithmMPI::post_processing() {
   int rank = world.rank();
   if (rank == 0) {
     auto* outputs = reinterpret_cast<double*>(taskData->outputs[0]);
-      size_t originalSize = static_cast<size_t>(std::sqrt(taskData->outputs_count[0]));
+      auto originalSize = static_cast<size_t>(std::sqrt(taskData->outputs_count[0]));
       for (size_t i = 0; i < originalSize; ++i) {
           for (size_t j = 0; j < originalSize; ++j) {
               outputs[i * originalSize + j] = outputMatrix[i * matrixSize + j];
