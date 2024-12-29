@@ -79,8 +79,8 @@ bool StrassenAlgorithmMPI::pre_processing() {
     if (matrixSize * matrixSize != taskData->inputs_count[0]) {
       return false;
     }
-      std::cout << "Original matrix size: " << matrixSize << ", padded size: " << newSize << std::endl;
       size_t newSize = nextPowerOfTwo(matrixSize);
+      std::cout << "Original matrix size: " << matrixSize << ", padded size: " << newSize << std::endl;
       inputMatrixA = padMatrix(std::vector<double>(inputsA, inputsA + matrixSize * matrixSize), matrixSize, newSize);
       inputMatrixB = padMatrix(std::vector<double>(inputsB, inputsB + matrixSize * matrixSize), matrixSize, newSize);
       matrixSize = newSize;
