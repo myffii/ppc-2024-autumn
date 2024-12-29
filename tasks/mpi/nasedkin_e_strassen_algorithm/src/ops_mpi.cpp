@@ -17,11 +17,11 @@ bool StrassenAlgorithmSEQ::pre_processing() {
   auto* inputsA = reinterpret_cast<double*>(taskData->inputs[0]);
   auto* inputsB = reinterpret_cast<double*>(taskData->inputs[1]);
   matrixSize = static_cast<size_t>(std::sqrt(taskData->inputs_count[0]));
-    size_t newSize = nextPowerOfTwo(matrixSize);
-    inputMatrixA = padMatrix(std::vector<double>(inputsA, inputsA + matrixSize * matrixSize), matrixSize, newSize);
-    inputMatrixB = padMatrix(std::vector<double>(inputsB, inputsB + matrixSize * matrixSize), matrixSize, newSize);
-    outputMatrix.resize(newSize * newSize, 0.0);
-    matrixSize = newSize;
+  size_t newSize = nextPowerOfTwo(matrixSize);
+  inputMatrixA = padMatrix(std::vector<double>(inputsA, inputsA + matrixSize * matrixSize), matrixSize, newSize);
+  inputMatrixB = padMatrix(std::vector<double>(inputsB, inputsB + matrixSize * matrixSize), matrixSize, newSize);
+  outputMatrix.resize(newSize * newSize, 0.0);
+  matrixSize = newSize;
   return true;
 }
 
@@ -48,12 +48,12 @@ bool StrassenAlgorithmSEQ::run() {
 bool StrassenAlgorithmSEQ::post_processing() {
   internal_order_test();
   auto* outputs = reinterpret_cast<double*>(taskData->outputs[0]);
-    auto originalSize = static_cast<size_t>(std::sqrt(taskData->outputs_count[0]));
-    for (size_t i = 0; i < originalSize; ++i) {
-        for (size_t j = 0; j < originalSize; ++j) {
-            outputs[i * originalSize + j] = outputMatrix[i * matrixSize + j];
-        }
+  auto originalSize = static_cast<size_t>(std::sqrt(taskData->outputs_count[0]));
+  for (size_t i = 0; i < originalSize; ++i) {
+    for (size_t j = 0; j < originalSize; ++j) {
+      outputs[i * originalSize + j] = outputMatrix[i * matrixSize + j];
     }
+  }
   return true;
 }
 
@@ -61,35 +61,34 @@ bool StrassenAlgorithmMPI::pre_processing() {
   internal_order_test();
   int rank = world.rank();
   if (rank == 0) {
-      auto *inputsA = reinterpret_cast<double *>(taskData->inputs[0]);
-      auto *inputsB = reinterpret_cast<double *>(taskData->inputs[1]);
+    auto* inputsA = reinterpret_cast<double*>(taskData->inputs[0]);
+    auto* inputsB = reinterpret_cast<double*>(taskData->inputs[1]);
 
-      if (inputsA == nullptr || inputsB == nullptr) {
-          return false;
-      }
+    if (inputsA == nullptr || inputsB == nullptr) {
+      return false;
+    }
 
-      matrixSize = static_cast<size_t>(std::sqrt(taskData->inputs_count[0]));
+    matrixSize = static_cast<size_t>(std::sqrt(taskData->inputs_count[0]));
 
-      if (matrixSize * matrixSize != taskData->inputs_count[0]) {
-          return false;
-      }
+    if (matrixSize * matrixSize != taskData->inputs_count[0]) {
+      return false;
+    }
 
-      size_t newSize = nextPowerOfTwo(matrixSize);
-      inputMatrixA = padMatrix(std::vector<double>(inputsA, inputsA + matrixSize * matrixSize), matrixSize, newSize);
-      inputMatrixB = padMatrix(std::vector<double>(inputsB, inputsB + matrixSize * matrixSize), matrixSize, newSize);
-      outputMatrix.resize(newSize * newSize, 0.0);
-      matrixSize = newSize;
+    size_t newSize = nextPowerOfTwo(matrixSize);
+    inputMatrixA = padMatrix(std::vector<double>(inputsA, inputsA + matrixSize * matrixSize), matrixSize, newSize);
+    inputMatrixB = padMatrix(std::vector<double>(inputsB, inputsB + matrixSize * matrixSize), matrixSize, newSize);
+    outputMatrix.resize(newSize * newSize, 0.0);
+    matrixSize = newSize;
   }
 
-    boost::mpi::broadcast(world, matrixSize, 0);
-    if (rank != 0) {
-        inputMatrixA.resize(matrixSize * matrixSize);
-        inputMatrixB.resize(matrixSize * matrixSize);
-        outputMatrix.resize(matrixSize * matrixSize, 0.0);
-    }
-    boost::mpi::broadcast(world, inputMatrixA, 0);
-    boost::mpi::broadcast(world, inputMatrixB, 0);
-
+  boost::mpi::broadcast(world, matrixSize, 0);
+  if (rank != 0) {
+    inputMatrixA.resize(matrixSize * matrixSize);
+    inputMatrixB.resize(matrixSize * matrixSize);
+    outputMatrix.resize(matrixSize * matrixSize, 0.0);
+  }
+  boost::mpi::broadcast(world, inputMatrixA, 0);
+  boost::mpi::broadcast(world, inputMatrixB, 0);
 
   return true;
 }
@@ -122,12 +121,12 @@ bool StrassenAlgorithmMPI::post_processing() {
   int rank = world.rank();
   if (rank == 0) {
     auto* outputs = reinterpret_cast<double*>(taskData->outputs[0]);
-      auto originalSize = static_cast<size_t>(std::sqrt(taskData->outputs_count[0]));
-      for (size_t i = 0; i < originalSize; ++i) {
-          for (size_t j = 0; j < originalSize; ++j) {
-              outputs[i * originalSize + j] = outputMatrix[i * matrixSize + j];
-          }
+    auto originalSize = static_cast<size_t>(std::sqrt(taskData->outputs_count[0]));
+    for (size_t i = 0; i < originalSize; ++i) {
+      for (size_t j = 0; j < originalSize; ++j) {
+        outputs[i * originalSize + j] = outputMatrix[i * matrixSize + j];
       }
+    }
   }
   return true;
 }
@@ -149,23 +148,23 @@ std::vector<double> matrix_subtract(const std::vector<double>& matrixA, const st
   return result;
 }
 
-    size_t nextPowerOfTwo(size_t n) {
-        size_t power = 1;
-        while (power < n) {
-            power *= 2;
-        }
-        return power;
-    }
+size_t nextPowerOfTwo(size_t n) {
+  size_t power = 1;
+  while (power < n) {
+    power *= 2;
+  }
+  return power;
+}
 
-    std::vector<double> padMatrix(const std::vector<double>& matrix, size_t originalSize, size_t newSize) {
-        std::vector<double> padded(newSize * newSize, 0.0);
-        for (size_t i = 0; i < originalSize; ++i) {
-            for (size_t j = 0; j < originalSize; ++j) {
-                padded[i * newSize + j] = matrix[i * originalSize + j];
-            }
-        }
-        return padded;
+std::vector<double> padMatrix(const std::vector<double>& matrix, size_t originalSize, size_t newSize) {
+  std::vector<double> padded(newSize * newSize, 0.0);
+  for (size_t i = 0; i < originalSize; ++i) {
+    for (size_t j = 0; j < originalSize; ++j) {
+      padded[i * newSize + j] = matrix[i * originalSize + j];
     }
+  }
+  return padded;
+}
 
 std::vector<double> strassen_recursive(const std::vector<double>& matrixA, const std::vector<double>& matrixB,
                                        size_t size) {
