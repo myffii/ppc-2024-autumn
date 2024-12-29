@@ -20,9 +20,12 @@ bool StrassenAlgorithmSEQ::pre_processing() {
   inputMatrixA.assign(inputsA, inputsA + matrixSize * matrixSize);
   inputMatrixB.assign(inputsB, inputsB + matrixSize * matrixSize);
     size_t newSize = nextPowerOfTwo(matrixSize);
+    std::cout << "Original matrix size: " << matrixSize << ", padded size: " << newSize << std::endl;
     inputMatrixA = padMatrix(std::vector<double>(inputsA, inputsA + matrixSize * matrixSize), matrixSize, newSize);
     inputMatrixB = padMatrix(std::vector<double>(inputsB, inputsB + matrixSize * matrixSize), matrixSize, newSize);
+    matrixSize = newSize;
     outputMatrix.resize(newSize * newSize, 0.0);
+    std::cout << "Original matrix" <<" padded successfully" << std::endl;
   return true;
 }
 
@@ -56,6 +59,7 @@ bool StrassenAlgorithmSEQ::post_processing() {
         }
     }
   std::copy(outputMatrix.begin(), outputMatrix.end(), outputs);
+    std::cout << "SEQ ended test" << std::endl;
   return true;
 }
 
@@ -75,11 +79,13 @@ bool StrassenAlgorithmMPI::pre_processing() {
     if (matrixSize * matrixSize != taskData->inputs_count[0]) {
       return false;
     }
-
+      std::cout << "Original matrix size: " << matrixSize << ", padded size: " << newSize << std::endl;
       size_t newSize = nextPowerOfTwo(matrixSize);
       inputMatrixA = padMatrix(std::vector<double>(inputsA, inputsA + matrixSize * matrixSize), matrixSize, newSize);
       inputMatrixB = padMatrix(std::vector<double>(inputsB, inputsB + matrixSize * matrixSize), matrixSize, newSize);
+      matrixSize = newSize;
       outputMatrix.resize(newSize * newSize, 0.0);
+      std::cout << "Original matrix padded successfully" << std::endl;
   }
   return true;
 }
@@ -123,6 +129,7 @@ bool StrassenAlgorithmMPI::post_processing() {
       }
     std::copy(outputMatrix.begin(), outputMatrix.end(), outputs);
   }
+    std::cout << "SEQ ended test" << std::endl;
   return true;
 }
 
@@ -306,6 +313,8 @@ std::vector<double> StrassenAlgorithmMPI::strassen_multiply(const std::vector<do
   boost::mpi::environment env;
   boost::mpi::communicator world;
 
+    std::cout << "Start size = " << size << std::endl;
+
   int rank = world.rank();
   int num_procs = world.size();
 
@@ -358,6 +367,7 @@ std::vector<double> StrassenAlgorithmMPI::strassen_multiply(const std::vector<do
         matrix_add(B11, B22, half_size),      B11, matrix_subtract(B12, B22, half_size),
         matrix_subtract(B21, B11, half_size), B22, matrix_add(B11, B12, half_size),
         matrix_add(B21, B22, half_size)};
+      std::cout << "Tasks created succesfully" << size << std::endl;
 
     for (int i = 0; i < 7; ++i) {
       if (i % num_procs == 0) {
@@ -366,7 +376,10 @@ std::vector<double> StrassenAlgorithmMPI::strassen_multiply(const std::vector<do
         world.send(i % num_procs, i, tasks[i]);
         world.send(i % num_procs, i, tasksB[i]);
       }
+        std::cout << "Tasks sent succesfully" << size << std::endl;
     }
+
+
   }
 
   for (int i = 0; i < 7; ++i) {
@@ -376,10 +389,13 @@ std::vector<double> StrassenAlgorithmMPI::strassen_multiply(const std::vector<do
 
       world.recv(0, i, taskA);
       world.recv(0, i, taskB);
+        std::cout << "Recv succesfully" << size << std::endl;
 
       M[i] = strassen_recursive(taskA, taskB, half_size);
+        std::cout << "Task " << i << " solved succesfully" << size << std::endl;
 
       world.send(0, i, M[i]);
+        std::cout << "Solution " << i << " sent succesfully" << size << std::endl;
     }
   }
 
@@ -389,6 +405,7 @@ std::vector<double> StrassenAlgorithmMPI::strassen_multiply(const std::vector<do
         std::vector<double> result;
         world.recv(i % num_procs, i, result);
         M[i] = result;
+          std::cout << "Solution " << i << " recv succesfully" << size << std::endl;
       }
     }
   }
@@ -410,6 +427,7 @@ std::vector<double> StrassenAlgorithmMPI::strassen_multiply(const std::vector<do
         result[(i + half_size) * size + j + half_size] = C22[i * half_size + j];
       }
     }
+      std::cout << "Final result calculated succesfully" << size << std::endl;
     return result;
   }
   return {};
