@@ -98,25 +98,25 @@ TEST(nasedkin_e_strassen_algorithm_seq, Test_2x2) {
 }
 
 TEST(nasedkin_e_strassen_algorithm_seq, Test_3x3) {
-int matrixSize = 3;
-std::vector<double> matrixA = generateRandomMatrix(matrixSize);
-std::vector<double> matrixB = generateRandomMatrix(matrixSize);
-std::vector<double> resultSeq(matrixSize * matrixSize, 0.0);
+  int matrixSize = 3;
+  std::vector<double> matrixA = generateRandomMatrix(matrixSize);
+  std::vector<double> matrixB = generateRandomMatrix(matrixSize);
+  std::vector<double> resultSeq(matrixSize * matrixSize, 0.0);
 
-std::shared_ptr<ppc::core::TaskData> taskDataSeq = std::make_shared<ppc::core::TaskData>();
+  std::shared_ptr<ppc::core::TaskData> taskDataSeq = std::make_shared<ppc::core::TaskData>();
 
-taskDataSeq->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixA.data()));
-taskDataSeq->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixB.data()));
-taskDataSeq->inputs_count.emplace_back(matrixA.size());
-taskDataSeq->inputs_count.emplace_back(matrixB.size());
-taskDataSeq->outputs.emplace_back(reinterpret_cast<uint8_t*>(resultSeq.data()));
-taskDataSeq->outputs_count.emplace_back(resultSeq.size());
+  taskDataSeq->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixA.data()));
+  taskDataSeq->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixB.data()));
+  taskDataSeq->inputs_count.emplace_back(matrixA.size());
+  taskDataSeq->inputs_count.emplace_back(matrixB.size());
+  taskDataSeq->outputs.emplace_back(reinterpret_cast<uint8_t*>(resultSeq.data()));
+  taskDataSeq->outputs_count.emplace_back(resultSeq.size());
 
-nasedkin_e_strassen_algorithm::StrassenAlgorithmSEQ testSeqTask(taskDataSeq);
-ASSERT_TRUE(testSeqTask.validation());
-ASSERT_TRUE(testSeqTask.pre_processing());
-ASSERT_TRUE(testSeqTask.run());
-ASSERT_TRUE(testSeqTask.post_processing());
+  nasedkin_e_strassen_algorithm::StrassenAlgorithmSEQ testSeqTask(taskDataSeq);
+  ASSERT_TRUE(testSeqTask.validation());
+  ASSERT_TRUE(testSeqTask.pre_processing());
+  ASSERT_TRUE(testSeqTask.run());
+  ASSERT_TRUE(testSeqTask.post_processing());
 }
 
 TEST(nasedkin_e_strassen_algorithm_seq, Test_4x4) {
@@ -142,25 +142,25 @@ TEST(nasedkin_e_strassen_algorithm_seq, Test_4x4) {
 }
 
 TEST(nasedkin_e_strassen_algorithm_seq, Test_7x7) {
-int matrixSize = 7;
-std::vector<double> matrixA = generateRandomMatrix(matrixSize);
-std::vector<double> matrixB = generateRandomMatrix(matrixSize);
-std::vector<double> resultSeq(matrixSize * matrixSize, 0.0);
+  int matrixSize = 7;
+  std::vector<double> matrixA = generateRandomMatrix(matrixSize);
+  std::vector<double> matrixB = generateRandomMatrix(matrixSize);
+  std::vector<double> resultSeq(matrixSize * matrixSize, 0.0);
 
-std::shared_ptr<ppc::core::TaskData> taskDataSeq = std::make_shared<ppc::core::TaskData>();
+  std::shared_ptr<ppc::core::TaskData> taskDataSeq = std::make_shared<ppc::core::TaskData>();
 
-taskDataSeq->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixA.data()));
-taskDataSeq->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixB.data()));
-taskDataSeq->inputs_count.emplace_back(matrixA.size());
-taskDataSeq->inputs_count.emplace_back(matrixB.size());
-taskDataSeq->outputs.emplace_back(reinterpret_cast<uint8_t*>(resultSeq.data()));
-taskDataSeq->outputs_count.emplace_back(resultSeq.size());
+  taskDataSeq->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixA.data()));
+  taskDataSeq->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixB.data()));
+  taskDataSeq->inputs_count.emplace_back(matrixA.size());
+  taskDataSeq->inputs_count.emplace_back(matrixB.size());
+  taskDataSeq->outputs.emplace_back(reinterpret_cast<uint8_t*>(resultSeq.data()));
+  taskDataSeq->outputs_count.emplace_back(resultSeq.size());
 
-nasedkin_e_strassen_algorithm::StrassenAlgorithmSEQ testSeqTask(taskDataSeq);
-ASSERT_TRUE(testSeqTask.validation());
-ASSERT_TRUE(testSeqTask.pre_processing());
-ASSERT_TRUE(testSeqTask.run());
-ASSERT_TRUE(testSeqTask.post_processing());
+  nasedkin_e_strassen_algorithm::StrassenAlgorithmSEQ testSeqTask(taskDataSeq);
+  ASSERT_TRUE(testSeqTask.validation());
+  ASSERT_TRUE(testSeqTask.pre_processing());
+  ASSERT_TRUE(testSeqTask.run());
+  ASSERT_TRUE(testSeqTask.post_processing());
 }
 
 TEST(nasedkin_e_strassen_algorithm_seq, Test_8x8) {
@@ -186,25 +186,25 @@ TEST(nasedkin_e_strassen_algorithm_seq, Test_8x8) {
 }
 
 TEST(nasedkin_e_strassen_algorithm_seq, Test_10x10) {
-int matrixSize = 10;
-std::vector<double> matrixA = generateRandomMatrix(matrixSize);
-std::vector<double> matrixB = generateRandomMatrix(matrixSize);
-std::vector<double> resultSeq(matrixSize * matrixSize, 0.0);
+  int matrixSize = 10;
+  std::vector<double> matrixA = generateRandomMatrix(matrixSize);
+  std::vector<double> matrixB = generateRandomMatrix(matrixSize);
+  std::vector<double> resultSeq(matrixSize * matrixSize, 0.0);
 
-std::shared_ptr<ppc::core::TaskData> taskDataSeq = std::make_shared<ppc::core::TaskData>();
+  std::shared_ptr<ppc::core::TaskData> taskDataSeq = std::make_shared<ppc::core::TaskData>();
 
-taskDataSeq->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixA.data()));
-taskDataSeq->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixB.data()));
-taskDataSeq->inputs_count.emplace_back(matrixA.size());
-taskDataSeq->inputs_count.emplace_back(matrixB.size());
-taskDataSeq->outputs.emplace_back(reinterpret_cast<uint8_t*>(resultSeq.data()));
-taskDataSeq->outputs_count.emplace_back(resultSeq.size());
+  taskDataSeq->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixA.data()));
+  taskDataSeq->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixB.data()));
+  taskDataSeq->inputs_count.emplace_back(matrixA.size());
+  taskDataSeq->inputs_count.emplace_back(matrixB.size());
+  taskDataSeq->outputs.emplace_back(reinterpret_cast<uint8_t*>(resultSeq.data()));
+  taskDataSeq->outputs_count.emplace_back(resultSeq.size());
 
-nasedkin_e_strassen_algorithm::StrassenAlgorithmSEQ testSeqTask(taskDataSeq);
-ASSERT_TRUE(testSeqTask.validation());
-ASSERT_TRUE(testSeqTask.pre_processing());
-ASSERT_TRUE(testSeqTask.run());
-ASSERT_TRUE(testSeqTask.post_processing());
+  nasedkin_e_strassen_algorithm::StrassenAlgorithmSEQ testSeqTask(taskDataSeq);
+  ASSERT_TRUE(testSeqTask.validation());
+  ASSERT_TRUE(testSeqTask.pre_processing());
+  ASSERT_TRUE(testSeqTask.run());
+  ASSERT_TRUE(testSeqTask.post_processing());
 }
 
 TEST(nasedkin_e_strassen_algorithm_seq, Test_16x16) {
@@ -230,25 +230,25 @@ TEST(nasedkin_e_strassen_algorithm_seq, Test_16x16) {
 }
 
 TEST(nasedkin_e_strassen_algorithm_seq, Test_17x17) {
-int matrixSize = 17;
-std::vector<double> matrixA = generateRandomMatrix(matrixSize);
-std::vector<double> matrixB = generateRandomMatrix(matrixSize);
-std::vector<double> resultSeq(matrixSize * matrixSize, 0.0);
+  int matrixSize = 17;
+  std::vector<double> matrixA = generateRandomMatrix(matrixSize);
+  std::vector<double> matrixB = generateRandomMatrix(matrixSize);
+  std::vector<double> resultSeq(matrixSize * matrixSize, 0.0);
 
-std::shared_ptr<ppc::core::TaskData> taskDataSeq = std::make_shared<ppc::core::TaskData>();
+  std::shared_ptr<ppc::core::TaskData> taskDataSeq = std::make_shared<ppc::core::TaskData>();
 
-taskDataSeq->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixA.data()));
-taskDataSeq->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixB.data()));
-taskDataSeq->inputs_count.emplace_back(matrixA.size());
-taskDataSeq->inputs_count.emplace_back(matrixB.size());
-taskDataSeq->outputs.emplace_back(reinterpret_cast<uint8_t*>(resultSeq.data()));
-taskDataSeq->outputs_count.emplace_back(resultSeq.size());
+  taskDataSeq->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixA.data()));
+  taskDataSeq->inputs.emplace_back(reinterpret_cast<uint8_t*>(matrixB.data()));
+  taskDataSeq->inputs_count.emplace_back(matrixA.size());
+  taskDataSeq->inputs_count.emplace_back(matrixB.size());
+  taskDataSeq->outputs.emplace_back(reinterpret_cast<uint8_t*>(resultSeq.data()));
+  taskDataSeq->outputs_count.emplace_back(resultSeq.size());
 
-nasedkin_e_strassen_algorithm::StrassenAlgorithmSEQ testSeqTask(taskDataSeq);
-ASSERT_TRUE(testSeqTask.validation());
-ASSERT_TRUE(testSeqTask.pre_processing());
-ASSERT_TRUE(testSeqTask.run());
-ASSERT_TRUE(testSeqTask.post_processing());
+  nasedkin_e_strassen_algorithm::StrassenAlgorithmSEQ testSeqTask(taskDataSeq);
+  ASSERT_TRUE(testSeqTask.validation());
+  ASSERT_TRUE(testSeqTask.pre_processing());
+  ASSERT_TRUE(testSeqTask.run());
+  ASSERT_TRUE(testSeqTask.post_processing());
 }
 
 TEST(nasedkin_e_strassen_algorithm_seq, Test_32x32) {
