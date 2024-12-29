@@ -10,7 +10,7 @@
 std::vector<double> generateRandomMatrix(int size) {
   std::random_device rd;
   std::mt19937 gen(rd());
-  std::uniform_real_distribution<> dis(-100.0, 100.0);
+  std::uniform_real_distribution<> dis(-10.0, 10.0);
   std::vector<double> matrix(size * size);
   for (int i = 0; i < size * size; i++) {
     matrix[i] = dis(gen);

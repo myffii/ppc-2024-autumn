@@ -11,7 +11,7 @@
 std::vector<double> generateRandomMatrix(int size) {
   std::random_device rd;
   std::mt19937 gen(rd());
-  std::uniform_real_distribution<> dis(-100.0, 100.0);
+  std::uniform_real_distribution<> dis(-10.0, 10.0);
   std::vector<double> matrix(size * size);
 
   for (int i = 0; i < size * size; i++) {
@@ -315,8 +315,9 @@ ASSERT_TRUE(testMpiTaskParallel.validation());
 ASSERT_TRUE(testMpiTaskParallel.pre_processing());
 ASSERT_TRUE(testMpiTaskParallel.run());
 ASSERT_TRUE(testMpiTaskParallel.post_processing());
-
+if (world.rank == 0){
 ASSERT_EQ(resultSeq, resultParallel);
+}
 }
 
 TEST(nasedkin_e_strassen_algorithm_mpi, Test_32x32) {
